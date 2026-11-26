@@ -1,0 +1,96 @@
+name: Deploy Drawplate to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Check out Drawplate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Stage static files
+        id: stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          site_dir="$(mktemp -d "$RUNNER_TEMP/drawplate-pages.XXXXXX")"
+
+          rsync -r --prune-empty-dirs \
+            --exclude='.git' \
+            --exclude='.taste-skill/' \
+            --exclude='.drawplate' \
+            --exclude='.drawplate.*' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='shots/' \
+            --exclude='node_modules/' \
+            --exclude='test/' \
+            --exclude='tests/' \
+            --exclude='__tests__/' \
+            --exclude='*.test.*' \
+            --exclude='*.spec.*' \
+            --exclude='**/native/build/' \
+            --exclude='**/native/dist/' \
+            --exclude='cmake-build-*/' \
+            --exclude='CMakeFiles/' \
+            --exclude='CMakeCache.txt' \
+            --exclude='slewbox-cli' \
+            --exclude='*.o' \
+            --exclude='*.obj' \
+            --exclude='*.a' \
+            --exclude='*.lib' \
+            --exclude='*.so' \
+            --exclude='*.so.*' \
+            --exclude='*.dylib' \
+            --exclude='*.dll' \
+            --exclude='*.exe' \
+            --exclude='*.dSYM/' \
+            --exclude='*.pdb' \
+            --exclude='.DS_Store' \
+            index.html workbench.html workbench.css workbench.js \
+            favicon.svg share.jpg README.md ARCHITECTURE.md LICENSE \
+            assets packages data "$site_dir/"
+          install -D -m 644 docs/DEPLOY.md "$site_dir/docs/DEPLOY.md"
+          install -D -m 644 docs/ENGINEERING_NOTES.md "$site_dir/docs/ENGINEERING_NOTES.md"
+
+          touch "$site_dir/.nojekyll"
+          printf 'path=%s\n' "$site_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ steps.stage.outputs.path }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

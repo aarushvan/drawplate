@@ -1,0 +1,223 @@
+{
+  "version": "1.0",
+  "recordedAt": "2026-11-25T16:20:00.000Z",
+  "target": "http://127.0.0.1:55292",
+  "entries": [
+    {
+      "id": "001",
+      "method": "GET",
+      "path": "/api/v1/workspaces",
+      "status": 200,
+      "ttfbMs": 6.54,
+      "totalMs": 9.4,
+      "reqHeaders": {
+        "accept": "application/json",
+        "host": "127.0.0.1:55293",
+        "user-agent": "drawplate-cli/1.0.0"
+      },
+      "reqBody": null,
+      "resHeaders": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 25 Nov 2026 16:31:02 GMT",
+        "x-drawplate-api": "1.0"
+      },
+      "resBody": {
+        "total": 2,
+        "workspaces": [
+          {
+            "branch": "main",
+            "dirtyFiles": 0,
+            "id": "ws-drawplate",
+            "indexedSymbols": 248,
+            "name": "drawplate-core"
+          },
+          {
+            "branch": "feat/bloom",
+            "dirtyFiles": 3,
+            "id": "ws-shaders",
+            "indexedSymbols": 84,
+            "name": "subpass-labs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "002",
+      "method": "GET",
+      "path": "/api/v1/index/search?mode=hybrid&q=diffAst",
+      "status": 200,
+      "ttfbMs": 6.92,
+      "totalMs": 9.46,
+      "reqHeaders": {
+        "accept": "application/json",
+        "host": "127.0.0.1:55293",
+        "user-agent": "drawplate-cli/1.0.0"
+      },
+      "reqBody": null,
+      "resHeaders": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 25 Nov 2026 16:31:03 GMT",
+        "x-drawplate-api": "1.0"
+      },
+      "resBody": {
+        "elapsedMs": 1.42,
+        "hits": [
+          {
+            "file": "packages/cleave/diff.mjs",
+            "kind": "function",
+            "line": 118,
+            "score": 0.964,
+            "symbol": "diffAst"
+          },
+          {
+            "file": "packages/cleave/merge.mjs",
+            "kind": "function",
+            "line": 42,
+            "score": 0.812,
+            "symbol": "merge3"
+          }
+        ],
+        "mode": "hybrid",
+        "query": "diffAst"
+      }
+    },
+    {
+      "id": "003",
+      "method": "POST",
+      "path": "/api/v1/shaders/compile",
+      "status": 200,
+      "ttfbMs": 10.85,
+      "totalMs": 14.66,
+      "reqHeaders": {
+        "accept": "application/json",
+        "content-length": "68",
+        "content-type": "application/json",
+        "host": "127.0.0.1:55293",
+        "user-agent": "drawplate-cli/1.0.0"
+      },
+      "reqBody": {
+        "passes": [
+          "geometry",
+          "bloom",
+          "tonemap"
+        ],
+        "shader": "pbr_sphere.glsl"
+      },
+      "resHeaders": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 25 Nov 2026 16:31:03 GMT",
+        "x-drawplate-api": "1.0"
+      },
+      "resBody": {
+        "compileMs": 1.85,
+        "ok": true,
+        "passCount": 3,
+        "shader": "pbr_sphere.glsl",
+        "warnings": []
+      }
+    },
+    {
+      "id": "004",
+      "method": "GET",
+      "path": "/api/v1/audio/patches",
+      "status": 200,
+      "ttfbMs": 5.57,
+      "totalMs": 8,
+      "reqHeaders": {
+        "accept": "application/json",
+        "host": "127.0.0.1:55293",
+        "user-agent": "drawplate-cli/1.0.0"
+      },
+      "reqBody": null,
+      "resHeaders": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 25 Nov 2026 16:31:03 GMT",
+        "x-drawplate-api": "1.0"
+      },
+      "resBody": {
+        "patches": [
+          {
+            "cutoffHz": 2400,
+            "deprecatedFormat": "v0",
+            "engine": "saw",
+            "id": "saw-lead"
+          },
+          {
+            "cutoffHz": 3800,
+            "deprecatedFormat": "v0",
+            "engine": "granular",
+            "id": "grain-cloud"
+          },
+          {
+            "cutoffHz": 6200,
+            "deprecatedFormat": "v0",
+            "engine": "fm",
+            "id": "fm-bell"
+          }
+        ],
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "005",
+      "method": "POST",
+      "path": "/api/v1/merges/preview",
+      "status": 200,
+      "ttfbMs": 8.92,
+      "totalMs": 11.42,
+      "reqHeaders": {
+        "accept": "application/json",
+        "content-length": "47",
+        "content-type": "application/json",
+        "host": "127.0.0.1:55293",
+        "user-agent": "drawplate-cli/1.0.0"
+      },
+      "reqBody": {
+        "file": "packages/cleave/diff.mjs",
+        "lang": "js"
+      },
+      "resHeaders": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 25 Nov 2026 16:31:03 GMT",
+        "x-drawplate-api": "1.0"
+      },
+      "resBody": {
+        "autoResolved": true,
+        "conflicts": 0,
+        "linesSaved": 46,
+        "movedBlocks": 2,
+        "strategy": "ast-3way"
+      }
+    },
+    {
+      "id": "006",
+      "method": "GET",
+      "path": "/api/v1/legacy/export",
+      "status": 200,
+      "ttfbMs": 5.81,
+      "totalMs": 8.26,
+      "reqHeaders": {
+        "accept": "application/json",
+        "host": "127.0.0.1:55293",
+        "user-agent": "drawplate-cli/1.0.0"
+      },
+      "reqBody": null,
+      "resHeaders": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Wed, 25 Nov 2026 16:31:03 GMT",
+        "x-drawplate-api": "1.0"
+      },
+      "resBody": {
+        "bytes": 18432,
+        "format": "ndjson",
+        "ready": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+.git
+.taste-skill
+.drawplate
+shots
+tests
+copy-draft.md
+names.json
+plan.md
+.DS_Store
+packages/slewbox/native/slewbox-cli
+node_modules
+*.md
+!README.md
+!ARCHITECTURE.md
+!docs/DEPLOY.md
+!docs/ENGINEERING_NOTES.md

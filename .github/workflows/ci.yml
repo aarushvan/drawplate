@@ -1,0 +1,32 @@
+name: Drawplate CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24+
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Build native C++20 Slewbox CLI
+        run: |
+          if command -v clang++ >/dev/null 2>&1; then
+            clang++ -std=c++20 -O2 packages/slewbox/native/slewbox_cli.cpp -o packages/slewbox/native/slewbox-cli
+          else
+            g++ -std=c++20 -O2 packages/slewbox/native/slewbox_cli.cpp -o packages/slewbox/native/slewbox-cli
+          fi
+
+      - name: Run full test suite
+        run: node --test tests/*.test.mjs
+
+      - name: Run live Drawplate benchmark suite
+        run: node bin/drawplate.mjs bench

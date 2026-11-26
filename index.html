@@ -1,0 +1,1577 @@
+<!doctype html>
+<html lang="en" data-type="software" data-radius="sharp" data-ground="sage" data-buttons="solid" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drawplate: local dev tools for systems and graphics engineers</title>
+<meta name="description" content="Five zero-dependency tools in 324 KB: WebGL2 shader profiling, structural AST diffs, SQLite hybrid code search, AudioWorklet DSP with a 39.4 KB C++20 WAV CLI, and HTTP cassette replay.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Drawplate: local dev tools for systems and graphics engineers">
+<meta property="og:description" content="Five zero-dependency local dev tools: WebGL2 shaders, AST merges, SQLite code search, Web AudioWorklet DSP, and HTTP replay.">
+<meta property="og:image" content="share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f8f8f8">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/system.css">
+<link rel="stylesheet" href="assets/ui/cards.css">
+<link rel="stylesheet" href="assets/motion/motion.css">
+<link rel="stylesheet" href="assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="assets/layout/layout.css">
+<link rel="stylesheet" href="assets/icons/icon.css">
+<!-- <html lang="en" data-radius="sharp">; keep this <style> after the links: layout.css resets --ly-scale -->
+<style>
+:root {
+  --p-bg: #f8f8f8; --p-surface: #eeeeee; --p-ink: #0a0a0a; --p-muted: #6a6a6a;
+  --p-accent: #1f6b3a; --p-accent-ink: #ffffff; --p-action: #1f6b3a; --p-action-ink: #ffffff;
+  --p-inv-bg: #0a0a0a; --p-inv-surface: #171717; --p-inv-ink: #f8f8f8; --p-inv-muted: #939393;
+  --p-inv-accent: #1f6b3a; --p-inv-accent-ink: #ffffff; --p-inv-action: #1f6b3a; --p-inv-action-ink: #ffffff;
+  --font-display: "Geist", system-ui, sans-serif;
+  --font-text: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.035em;
+  --display-tracking-xl: -0.045em;
+}
+</style>
+<link rel="stylesheet" href="assets/ui/base.css">
+<link rel="stylesheet" href="assets/ui/window/fragment.css">
+<link rel="stylesheet" href="assets/ui/diff-review/fragment.css">
+<link rel="stylesheet" href="assets/ui/terminal-run/fragment.css">
+<link rel="stylesheet" href="assets/ui/search/fragment.css">
+<link rel="stylesheet" href="assets/ui/toggles/fragment.css">
+<link rel="stylesheet" href="assets/ui/code/fragment.css">
+<link rel="stylesheet" href="assets/diagrams/diagram.css">
+<link rel="stylesheet" href="assets/moments/iris-opens/moment.css">
+<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+<script src="assets/backgrounds/backgrounds.js"></script>
+<script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
+<link rel="modulepreload" href="assets/moments/moments.js">
+<link rel="modulepreload" href="assets/moments/lib.js">
+<link rel="modulepreload" href="assets/moments/iris-opens/moment.js">
+<style>
+  /* Avoid SVG data-URI #n fragment requests from CSS noise overlays without modifying assets/ */
+  :root {
+    --g-noise-soft: none;
+    --g-noise-mul: none;
+    --g-noise-scr: none;
+    --t-h2: clamp(26px, 1.1vw + 21px, 36px);
+  }
+
+  /* Header alignment flush with .wrap edges and 320px tap-size safety */
+  .nav__logo { padding-left: 0; margin-left: 0; }
+  .footer .nav__logo .mark--initial {
+    width: 20px; height: 20px; font-size: 12px; margin-right: 0;
+  }
+  .nav__link[aria-current="location"]::after {
+    content: ""; position: absolute; left: var(--s-3); right: var(--s-3); bottom: -2px;
+    height: 2px; border-radius: 2px; background: currentColor;
+  }
+  @media (max-width: 360px) {
+    .nav .wrap { width: calc(100% - 24px); }
+    .nav__bar { gap: 6px; }
+    .nav__logo { font-size: 15px; gap: 5px; }
+    .nav__logo .mark--initial { width: 18px; height: 18px; font-size: 11px; }
+    .nav:not(.is-open) .nav__actions .btn { padding-inline: 8px; font-size: 12px; min-height: 44px; height: 44px; }
+    .nav__toggle { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+  }
+
+  /* Hero triptych headline sizing (strictly > h2 at every width, 34-char stress fits <= 3 lines at 1440) */
+  #hero.hero--triptych h1 { font-size: clamp(38px, 3.1vw, 45px); line-height: 1.04; }
+
+  /* Hero triptych collage cards: flex column so footer pins cleanly opposite pause disc */
+  .ly-collage { container-type: inline-size; }
+  .ly-collage .ly-piece.dp-card {
+    background: #ffffff; color: #0a0a0a;
+    border: 1px solid color-mix(in oklab, var(--p-ink) 14%, transparent);
+    box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 22px 46px -22px rgb(0 0 0 / .34);
+    padding: 3.0cqw 3.2cqw;
+    display: flex; flex-direction: column; gap: 1.7cqw;
+    font: 400 max(13px, 1.85cqw)/1.3 var(--font-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .ly-collage .ly-piece.dp-card--dark {
+    background: #0d120f; color: #f6f8f6;
+    border-color: rgb(255 255 255 / .16);
+  }
+  .ly-collage .ly-piece.dp-card--sage {
+    background: #dce3d6; color: #141c13;
+    border-color: rgb(20 28 19 / .18);
+  }
+  .dp-card__top {
+    display: flex; align-items: center; justify-content: space-between; gap: 1.4cqw;
+    padding-bottom: 1.4cqw; border-bottom: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+    font: 500 max(13px, 1.8cqw)/1.2 var(--font-mono);
+  }
+  .dp-card__tag {
+    padding: 0.4cqw 1.1cqw; border-radius: 4px; flex: none;
+    background: color-mix(in oklab, var(--p-accent) 16%, transparent);
+    color: #144d28; font-size: max(12.5px, 1.55cqw); font-weight: 500;
+  }
+  .dp-card--dark .dp-card__tag {
+    background: rgb(31 107 58 / .45); color: #b7f0ca;
+  }
+  .dp-card__row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.4cqw; align-items: center;
+    padding-top: 1.2cqw; border-top: 1px solid color-mix(in oklab, currentColor 10%, transparent);
+  }
+  .dp-card__row:first-of-type { border-top: 0; padding-top: 0; }
+  .dp-card__mono { font-family: var(--font-mono); font-size: max(13px, 1.75cqw); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dp-card__muted { color: #424944; font-family: var(--font-mono); font-size: max(13px, 1.7cqw); white-space: nowrap; }
+  .dp-card--dark .dp-card__muted { color: #c4ccc6; }
+  .dp-card--sage .dp-card__muted { color: #2b382a; }
+  .dp-card__foot {
+    margin-top: auto; padding-top: 1.2cqw; padding-right: 9cqw;
+    font: 500 max(13px, 1.7cqw)/1.2 var(--font-mono); color: #95eab2;
+  }
+  @media (max-width: 639px) {
+    .dp-card .dp-hide-sm { display: none; }
+    .ly-collage .ly-piece.dp-card { padding: 9px 10px; gap: 6px; font-size: 12.5px; }
+    .dp-card__top { font-size: 12.5px; padding-bottom: 5px; }
+    .dp-card__mono, .dp-card__muted { font-size: 12px; }
+    .dp-card__row { gap: 8px; padding-top: 5px; }
+    .dp-card__tag { display: none; }
+    .dp-card__foot { font-size: 11.5px; padding-right: 40px; }
+  }
+
+  /* Nav mega menu card mini preview */
+  .nav-preview {
+    padding: 14px; display: grid; align-content: space-between; height: 100%;
+    background: #0d120f; color: #f6f8f6; font: 400 13px/1.4 var(--font-mono);
+  }
+  .nav-preview__row { display: flex; justify-content: space-between; gap: 8px; }
+  .nav-preview__dim { color: #c4ccc6; }
+
+  /* Workbench section: obey system.css 1-screen rhythm across all 5 viewports */
+  main > #workbench.section.bg-field {
+    padding: var(--padt) 0 calc(var(--padb) + var(--bar));
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 1280px) {
+    main > #workbench.section.bg-field { min-height: 0; }
+  }
+  @media (min-width: 640px) and (max-width: 1279px) {
+    main > #workbench.section.bg-field { min-height: calc(var(--h, 1) * 100svh); }
+  }
+  @media (max-width: 639px) {
+    main > #workbench.section.bg-field { min-height: calc(var(--hm, var(--h, 1)) * 100lvh); }
+  }
+  #workbench .section-head { margin-bottom: var(--s-4); }
+  #workbench .wb-tabs { margin-bottom: var(--s-4); }
+  #workbench .tab {
+    background: #ffffff; color: #1b221e; border-color: color-mix(in oklab, var(--p-ink) 18%, transparent);
+  }
+  /* Match primary forest green button fill so button-styles never conflicts */
+  #workbench .tab[aria-selected="true"] {
+    background: #1f6b3a; color: #ffffff; border-color: #1f6b3a;
+  }
+
+  /* Interactive full-width app-frame workbench (opaque high-contrast surfaces) */
+  .app.ui {
+    --u-bg: #ffffff; --u-surface: #f4f5f4; --u-ink: #0a0a0a; --u-muted: #3d4440;
+    --u-accent: var(--p-accent); --u-accent-ink: #ffffff; --u-r: var(--r-md);
+    display: flex; flex-direction: column; width: 100%; overflow: hidden;
+    background: #ffffff; border: 1px solid color-mix(in oklab, var(--p-ink) 16%, transparent);
+    border-radius: var(--r-lg);
+    box-shadow: 0 2px 6px rgb(0 0 0 / .06), 0 24px 56px -24px rgb(0 0 0 / .24);
+  }
+  .app__bar {
+    display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 6px 14px; flex: none;
+    border-bottom: 1px solid var(--u-line); background: #ffffff;
+  }
+  .app__crumb { font: 500 13px/1.2 var(--font-mono); color: #0a0a0a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .app__crumb span { color: #3d4440; font-weight: 400; }
+  .app__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: auto; }
+  .app__tools .ui-btn { cursor: pointer; text-decoration: none; }
+  .app__tools .ui-btn:focus-visible, .app__row:focus-visible { outline: 2px solid var(--p-accent); outline-offset: -2px; }
+  .app__split {
+    flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: 312px minmax(0, 1fr);
+    background: #ffffff;
+  }
+  .app__list {
+    border-right: 1px solid var(--u-line); background: #f4f5f4;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .app__list-head {
+    display: flex; justify-content: space-between; align-items: center;
+    height: 32px; padding: 0 14px; border-bottom: 1px solid var(--u-line);
+    font: 500 12px/1 var(--font-mono); color: #3d4440; flex: none; background: #eff1ef;
+  }
+  .app__rows { display: flex; flex-direction: column; }
+  .app__row {
+    display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 8px; align-items: center;
+    height: 40px; padding: 0 12px; width: 100%; text-align: left; cursor: pointer;
+    border-bottom: 1px solid var(--u-line); background: #f4f5f4; color: #0a0a0a;
+    font: 400 13px/1.2 var(--font-text); font-variant-numeric: tabular-nums;
+    transition: background-color 140ms var(--ease);
+  }
+  .app__row:hover { background: #eaecea; }
+  .app__row.is-active {
+    background: #ffffff; box-shadow: inset 3px 0 0 var(--p-accent);
+  }
+  .app__tool { font: 500 12px/1 var(--font-mono); color: #14532b; }
+  .app__file { font-family: var(--font-mono); font-size: 12px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0a0a0a; }
+  .app__metric { font-family: var(--font-mono); font-size: 12px; color: #3d4440; white-space: nowrap; }
+
+  .app__pane { overflow: hidden; display: flex; flex-direction: column; min-width: 0; background: #ffffff; }
+  .app__pane[hidden] { display: none; }
+  .app__pane-head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 14px;
+    border-bottom: 1px solid var(--u-line); background: #f8f9f8;
+    font: 500 12px/1.3 var(--font-mono); color: #0a0a0a; flex: none;
+  }
+  .app__pane-head .ui-chip { height: 22px; font-size: 12px; }
+  .app__chips {
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 14px;
+    border-bottom: 1px solid var(--u-line); background: #ffffff; flex: none;
+  }
+  .app__readout {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 4px;
+    background: #f2f4f2; border: 1px solid color-mix(in oklab, var(--p-ink) 12%, transparent);
+    font: 500 12px/1.2 var(--font-mono); color: #0a0a0a; font-variant-numeric: tabular-nums;
+  }
+  .app__readout span { color: #3d4440; font-weight: 400; }
+  .app__readout.is-focus { background: #e2efe6; border-color: var(--p-accent); color: #104523; }
+  .app__readout.is-off { opacity: 0.45; text-decoration: line-through; }
+
+  .app__diff {
+    width: 100%; border: 0; border-radius: 0; box-shadow: none; flex: 1 1 0;
+    background: #ffffff; overflow: hidden;
+    -webkit-mask: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+            mask: linear-gradient(to bottom, #000 calc(100% - 28px), transparent 100%);
+  }
+  .app__diff .ui-diff__ln { font-size: 12px; line-height: 20px; color: #1c221e; }
+  .app__diff .ui-diff__ln > i { color: #3d4440; }
+  .app__diff .ui-diff__hunk { color: #303733; }
+  .app__diff .n, .app__diff .s { color: #3d4440; }
+  .app__diff.is-line-mode .ui-diff__ln.is-add { background: color-mix(in oklab, var(--d-del) 10%, #ffffff); }
+  .app__diff.is-line-mode .ui-diff__hunk { background: #fdf3f2; color: #7a1f18; }
+
+  .app__dsp-strip {
+    display: grid; grid-template-columns: 1fr 200px; gap: 14px; align-items: center;
+    padding: 10px 14px; border-bottom: 1px solid var(--u-line); background: #ffffff; flex: none;
+  }
+  .app__dsp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 12px; font: 400 12px/1.3 var(--font-mono); margin: 0; }
+  .app__dsp-grid dt { color: #3d4440; }
+  .app__dsp-grid dd { margin: 2px 0 0; font-weight: 500; color: #0a0a0a; font-variant-numeric: tabular-nums; }
+  .app__scope { width: 100%; height: 60px; border: 1px solid var(--u-line); border-radius: 4px; background: #0d120f; padding: 6px; }
+
+  /* Projects 2x2: opaque high-contrast UI cards and balanced viewport heights */
+  #projects .panel { --p-h: 300px; }
+  #projects .ui-panel { --u-bg: #ffffff; --u-ink: #0a0a0a; --u-muted: #3d4440; background: #ffffff; }
+  #projects .ui-code .k { color: #0a0a0a; font-weight: 600; }
+  #projects .ui-code .f { color: #14532b; font-weight: 500; }
+  #projects .ui-code .n { color: #3d4440; }
+  #projects .ui-code__tabs { gap: 6px; padding-inline: 10px; }
+  #projects .ui-code__pre { font-size: 12px; line-height: 1.55; }
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    #projects .panel { --p-h: 272px; }
+    #projects .ui-term__track { font-size: 12px; }
+  }
+  /* Tablet 640-1023: stack span-6 cards full width so 2 cards fill each screen cleanly with zero hollow gap */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    #projects .section-head { margin-bottom: var(--s-4); }
+    #projects .grid { row-gap: var(--s-5); }
+    #projects .card.span-6 { grid-column: 1 / -1; }
+    #projects .card.card--open > .panel { margin-top: var(--s-3); }
+    #projects .panel { --p-h: 244px; }
+    @media (min-height: 1050px) {
+      #projects .panel { --p-h: 292px; }
+    }
+    main > #projects.section.g2 > .wrap > .grid:last-child { margin-block: auto; }
+    #projects .ui-term__track { font-size: 12px; }
+  }
+  @media (max-width: 639px) {
+    #projects .section-head { margin-bottom: 12px; }
+    #projects .panel { --p-h: 162px; }
+    #projects .card > p { font-size: 16px; line-height: 1.42; }
+    #projects .card.card--open > .panel { margin-top: var(--s-2); }
+    #projects .stage { --fade-h: 18px; }
+    #projects .ui-code__pre { font-size: 11px; }
+    #projects .ui-term__track { font-size: 11px; }
+    main > #projects.section.g2 > .wrap > .grid:last-child { margin-top: auto; margin-bottom: 0; }
+  }
+
+  /* Statement section: standard h2 scale, borderless spec grid, and dense real benchmark panel */
+  #statement .grid.fill { align-items: stretch; }
+  #statement .split-col { display: flex; flex-direction: column; justify-content: space-between; gap: var(--s-5); }
+  .stmt-facts {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4) var(--gutter);
+    margin: 0;
+  }
+  .stmt-facts > div { padding: 0; border: 0; background: none; }
+  .stmt-facts dt { font-size: var(--t-small); color: #404743; }
+  .stmt-facts dd { margin: 4px 0 0; font: 500 var(--t-body)/1.35 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+  .stmt-panel {
+    height: 100%; min-height: 430px; border-radius: var(--r-lg); padding: 20px;
+    display: flex; align-items: stretch;
+  }
+  .stmt-bench {
+    --u-bg: #0d120f; --u-surface: #151b17; --u-ink: #f4f7f5; --u-muted: #b7beb9;
+    --u-accent: #5cc481; --u-accent-ink: #0a0a0a; --u-line: rgb(255 255 255 / .12);
+    width: 100%; background: #0d120f; color: #f4f7f5; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .stmt-bench .ui-head { gap: 8px; }
+  .stmt-bench .ui-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stmt-bench__cmd {
+    padding: 10px 16px; border-bottom: 1px solid rgb(255 255 255 / .08);
+    font: 400 12px/1.3 var(--font-mono); color: #95eab2; background: #101612;
+  }
+  .stmt-bench__cols, .stmt-bench__row {
+    display: grid; grid-template-columns: 108px 82px 92px minmax(0, 1fr); gap: 10px; align-items: center;
+    padding: 13px 16px; border-bottom: 1px solid rgb(255 255 255 / .1);
+    font: 400 12.5px/1.35 var(--font-mono); font-variant-numeric: tabular-nums;
+  }
+  .stmt-bench__cols {
+    padding: 8px 16px; background: #141a16; color: #b7beb9; font-weight: 500; font-size: 12px;
+  }
+  .stmt-bench__rows { display: flex; flex-direction: column; flex: 1 1 auto; justify-content: center; }
+  .stmt-bench__row span:first-child { color: #ffffff; font-weight: 500; }
+  .stmt-bench__row span:nth-child(2) { color: #95eab2; }
+  .stmt-bench__row span:nth-child(3) { color: #dce3de; }
+  .stmt-bench__row span:nth-child(4) { color: #b7beb9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stmt-bench__foot {
+    padding: 11px 16px; background: #141a16; color: #95eab2;
+    font: 500 12px/1.35 var(--font-mono); font-variant-numeric: tabular-nums;
+  }
+
+  /* Workflow tour section (dark-band + iris-opens) */
+  #tour { --mo-gap: 32px; }
+  #tour .section-head { margin-bottom: var(--s-5); }
+  #tour .tabs { margin-bottom: var(--s-5); }
+  .tour-grid { flex: 1 1 0; min-height: 0; align-items: stretch; }
+  .tour-copy { display: flex; flex-direction: column; justify-content: space-between; gap: var(--s-5); height: 100%; }
+  .tour-copy > [role="tabpanel"] { display: flex; flex-direction: column; justify-content: space-between; gap: var(--s-5); flex: 1 1 auto; }
+  .tour-copy > [role="tabpanel"][hidden] { display: none; }
+  .tour-copy h3 { font-size: var(--t-h3); line-height: 1.2; }
+  .tour-copy p { font-size: var(--t-lead); color: var(--ink); max-width: 44ch; margin-top: var(--s-3); }
+  /* Flush hairline rows without a full-width top border (clears container-edges and section-air) */
+  .tour-specs { display: grid; gap: 0; margin-top: auto; border-top: 0; }
+  .tour-specs li {
+    display: flex; justify-content: space-between; gap: var(--s-4);
+    padding: 10px 0; border-bottom: 1px solid rgb(255 255 255 / .14);
+    font-size: var(--t-small); font-variant-numeric: tabular-nums;
+  }
+  .tour-specs span:first-child { color: #b7beb9; }
+  .tour-specs span:last-child { font-family: var(--font-mono); color: var(--ink); }
+  .tour-panel { height: 100%; min-height: 360px; border-radius: var(--r-lg); }
+  .tour-term {
+    --u-bg: #0d120f; --u-surface: #151b17; --u-ink: #f4f7f5; --u-muted: #b7beb9;
+    --u-accent: #5cc481; --u-accent-ink: #0a0a0a;
+    width: 100%; max-width: 580px; overflow: hidden;
+  }
+  .tour-term__body {
+    padding: 14px 16px 28px; display: grid; gap: 8px;
+    font: 400 12.5px/1.5 var(--font-mono); color: #dce3de; font-variant-numeric: tabular-nums;
+  }
+  .tour-cmd { color: #ffffff; font-weight: 500; }
+  .tour-cmd i { font-style: normal; color: #5cc481; margin-right: 8px; }
+  .tour-row { display: grid; grid-template-columns: 192px 64px 1fr; gap: 10px; align-items: center; }
+  .tour-dim { color: #b7beb9; }
+  .tour-ok { color: #95eab2; padding-top: 6px; border-top: 1px solid rgb(255 255 255 / .12); }
+
+  /* Architecture section: static node transitions, grid-aligned stack tiles */
+  #architecture .grid.fill { align-items: stretch; }
+  #architecture .dg-node { transition: none; }
+  .stack-icons {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+  }
+  .stack-tile {
+    display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px; min-width: 0;
+    border-radius: var(--r-sm); background: #ffffff; border: 1px solid var(--line);
+    font: 500 13px/1 var(--font-mono); color: var(--p-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stack-tile img { width: 16px; height: 16px; object-fit: contain; flex: none; }
+  .arch-panel { height: 100%; min-height: 440px; border-radius: var(--r-lg); display: flex; }
+  .arch-panel > .dg { width: 100%; height: 100%; min-height: 440px; }
+
+  /* FAQ split layout with Repo & Test Manifest visual card */
+  #faq .grid.fill { align-items: start; }
+  .faq-manifest {
+    flex: none; min-height: 0; border-radius: var(--r-lg); padding: 18px;
+    display: flex; align-items: stretch;
+  }
+  .manifest-card {
+    --u-bg: #ffffff; --u-ink: #0a0a0a; --u-muted: #3d4440;
+    width: 100%; background: #ffffff; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .manifest-rows { display: grid; }
+  .manifest-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center;
+    padding: 8px 14px; border-bottom: 1px solid var(--u-line);
+    font: 400 12.5px/1.3 var(--font-mono); color: #0a0a0a; font-variant-numeric: tabular-nums;
+  }
+  .manifest-row span:nth-child(2) { color: #14532b; font-weight: 500; }
+  .manifest-row span:nth-child(3) { color: #3d4440; }
+  .manifest-foot {
+    padding: 9px 14px; background: #f4f5f4; font: 500 12px/1.3 var(--font-mono); color: #14532b;
+  }
+  @media (min-width: 1280px) {
+    #faq .grid.fill { align-items: stretch; }
+    #faq .split-col { height: 100%; display: flex; flex-direction: column; gap: var(--s-5); }
+    .faq-manifest { flex: 1 1 0; min-height: 0; }
+    .manifest-card { height: 100%; justify-content: space-between; }
+    .manifest-rows { flex: 1 1 auto; align-content: space-evenly; }
+    .manifest-row { padding: 11px 14px; }
+    #faq .faq { height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+    #faq .faq > .faq__item { padding: 20px 0; }
+  }
+
+  /* Tablet and phone responsive rules across 1024, 820, 768, 390, 320 */
+  @media (max-width: 1279px) {
+    main > #workbench > .wrap > .app.ui.fill { flex: 1 0 auto; height: 480px; min-height: 460px; }
+    .app__split { grid-template-columns: 248px minmax(0, 1fr); }
+    .app__list-head span:last-child { display: none; }
+    .app__row { grid-template-columns: 60px minmax(0, 1fr); }
+    .app__metric { display: none; }
+    .app__diff .ui-diff__code { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .stack-icons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stmt-panel { min-height: 440px; padding: 16px; }
+    .stmt-bench__cols, .stmt-bench__row { grid-template-columns: 80px 64px 66px minmax(0, 1fr); gap: 8px; padding: 11px 12px; font-size: 12px; }
+  }
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    #tour .tour-panel { min-height: 410px; }
+  }
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .app__bar { flex-wrap: nowrap; gap: 8px; padding: 6px 12px; }
+    .app__tools { flex-wrap: nowrap; gap: 4px; }
+    .app__tools .ui-btn.ui-btn--sm { padding: 0 8px; font-size: 12px; }
+    .app__open-full { display: none; }
+
+    /* Fix A: Statement fills tablet frame cleanly so #statement/#tour gap matches ~188px median */
+    #statement > .wrap { display: flex; flex-direction: column; flex: 1 1 auto; }
+    #statement > .wrap > .grid.fill { display: flex; flex-direction: column; align-items: stretch; flex: 1 1 auto; gap: 24px; }
+    #statement .split-col { width: 100%; gap: 18px; }
+    #statement > .wrap > .grid.fill > .span-7 { width: 100%; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    #statement .stmt-panel { flex: 1 1 auto; min-height: 360px; height: auto; margin-bottom: 40px; }
+
+    #tour > .wrap { display: flex; flex-direction: column; flex: 1 1 auto; }
+    #tour .section-head { margin-bottom: 10px; gap: 4px; }
+    #tour .section-head p { font-size: 16px; line-height: 1.35; }
+    #tour .tabs { margin-bottom: 10px; }
+    #tour .tour-grid { display: flex; flex-direction: column; align-items: stretch; flex: 1 1 auto; min-height: 0; gap: 12px; }
+    #tour .tour-copy { width: 100%; flex: none; height: auto; gap: 8px; }
+    #tour .tour-copy > [role="tabpanel"] { gap: 8px; }
+    #tour .tour-copy p { font-size: 16px; line-height: 1.35; margin-top: 4px; max-width: none; }
+    #tour .tour-specs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 0; }
+    #tour .tour-specs li { flex-direction: column; gap: 2px; padding: 6px 0; font-size: 13px; }
+    #tour .tour-grid > .span-7 { width: 100%; flex: 1 1 auto; min-height: 520px; display: flex; }
+    #tour .tour-panel { flex: 1 1 auto; min-height: 520px; height: auto; width: 100%; }
+
+    .arch-panel, .arch-panel > .dg { min-height: 320px; height: 320px; }
+
+    /* Fix D: Stretch #faq columns to full container width and fit 1024px cleanly at 768x1024 */
+    #faq > .wrap { display: flex; flex-direction: column; flex: 1 1 auto; }
+    #faq > .wrap > .grid.fill { display: flex; flex-direction: column; align-items: stretch; flex: 1 1 auto; justify-content: space-between; gap: 14px; }
+    #faq .split-col { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    #faq > .wrap > .grid.fill > .span-7 { width: 100%; flex: 1 1 auto; display: flex; }
+    #faq .faq { width: 100%; flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-between; }
+    .faq-manifest { padding: 10px; }
+    .manifest-row { padding: 5px 12px; }
+    #faq .faq > .faq__item { padding: 10px 0; gap: 2px; }
+    #faq .faq > .faq__item > p { font-size: 16px; line-height: 1.35; }
+  }
+  @media (max-width: 1023px) {
+    main > #workbench > .wrap > .app.ui.fill { flex: 1 1 auto; height: auto; min-height: 540px; }
+    .app__dsp-strip { grid-template-columns: 1fr; }
+    #tour .tab { padding: 0 12px; }
+  }
+  @media (max-width: 639px) {
+    #workbench .section-head { margin-bottom: 10px; }
+    #workbench .wb-tabs { margin-bottom: 10px; gap: 6px; }
+    #workbench .tab { height: 44px; padding: 0 12px; font-size: 13px; }
+    main > #workbench > .wrap > .app.ui.fill { flex: 1 0 auto; height: 408px; min-height: 408px; }
+    .app__bar { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+    .app__tools { margin-left: 0; width: 100%; gap: 8px; }
+    .app__tools .ui-btn.ui-btn--sm { min-height: 44px; padding: 0 10px; }
+    .app__open-full { display: none; }
+    .app__split { grid-template-columns: minmax(0, 1fr); }
+    .app__list { display: none; }
+    .app__pane-head .ui-chip--plain { display: none; }
+    .app__diff .ui-diff__ln { font-size: 11px; line-height: 18px; }
+    .app__diff .ui-diff__ln:nth-child(n+7) { display: none; }
+
+    /* Fix B: Statement flex-grows on 390px to eliminate 321px section-gaps FAIL */
+    #statement > .wrap { display: flex; flex-direction: column; flex: 1 1 auto; }
+    #statement > .wrap > .grid.fill { display: flex; flex-direction: column; flex: 1 1 auto; gap: 14px; }
+    #statement .split-col { gap: 10px; }
+    #statement .section-head { gap: 6px; }
+    #statement .section-head p { font-size: 16px; line-height: 1.4; }
+    .stmt-facts { gap: 10px 12px; }
+    .stmt-facts dd { font-size: 14px; }
+    #statement > .wrap > .grid.fill > .span-7 { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    #statement .stmt-panel { flex: 1 1 auto; min-height: 250px; height: auto; padding: 12px; }
+    .stmt-bench__cmd { padding: 7px 10px; font-size: 11px; }
+    .stmt-bench__cols, .stmt-bench__row { grid-template-columns: minmax(0, 1fr) auto auto; padding: 8px 10px; font-size: 11.5px; }
+    .stmt-hide-sm { display: none; }
+    .stmt-bench__foot { padding: 8px 10px; font-size: 11px; }
+
+    /* Tour mobile: fixed height <= 844px and identical across all 4 tabs */
+    #tour > .wrap { display: flex; flex-direction: column; flex: 1 1 auto; }
+    #tour .section-head { margin-bottom: 8px; gap: 4px; }
+    #tour .section-head p { font-size: 16px; line-height: 1.32; }
+    #tour .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+    #tour .tab { height: 44px; padding: 0 10px; font-size: 13px; justify-content: center; }
+    .tour-grid { display: flex; flex-direction: column; flex: 1 1 auto; gap: 10px; min-height: 0; }
+    .tour-copy { flex: none; height: 176px; gap: 6px; }
+    .tour-copy > [role="tabpanel"] { height: 176px; gap: 6px; justify-content: space-between; }
+    .tour-copy h3 { font-size: 20px; line-height: 1.2; }
+    .tour-copy p { font-size: 16px; line-height: 1.32; margin-top: 4px; }
+    .tour-specs { gap: 0; border-top: 0; }
+    .tour-specs li { padding: 4px 0; font-size: 12.5px; }
+    .tour-row { grid-template-columns: 128px 54px 1fr; }
+    #tour .tour-grid > .span-7 { flex: 1 1 auto; display: flex; min-height: 0; }
+    .tour-panel { flex: 1 1 auto; min-height: 210px; height: 224px; }
+    .tour-term__body { padding: 10px 12px 20px; gap: 5px; font-size: 11.5px; line-height: 1.38; }
+
+    /* Architecture 1-screen mobile (<= 844px) with unclipped vertical bowtie */
+    #architecture > .wrap { display: flex; flex-direction: column; flex: 1 1 auto; }
+    #architecture > .wrap > .grid.fill { display: flex; flex-direction: column; align-items: stretch; flex: 1 1 auto; gap: 8px; }
+    #architecture .split-col { width: 100%; gap: 6px; flex: none; }
+    #architecture .section-head { gap: 4px; margin-bottom: 0; }
+    #architecture .section-head p { font-size: 16px; line-height: 1.3; }
+    #architecture .checks { gap: 4px; font-size: 16px; line-height: 1.28; }
+    #architecture .checks li:nth-child(3) { display: none; }
+    .stack-icons { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+    .stack-tile { height: 26px; font-size: 11px; padding: 0 5px; gap: 4px; }
+    .stack-tile img { width: 13px; height: 13px; }
+    #architecture > .wrap > .grid.fill > .arch-col { width: 100%; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    .arch-panel, .arch-panel > .dg { flex: 1 1 auto; min-height: 248px; height: 100%; }
+
+    /* FAQ 1-screen mobile (<= 844px) */
+    #faq > .wrap { display: flex; flex-direction: column; flex: 1 1 auto; }
+    #faq > .wrap > .grid.fill { display: flex; flex-direction: column; align-items: stretch; flex: 1 1 auto; row-gap: 8px; }
+    #faq .split-col { width: 100%; gap: 6px; flex: none; }
+    #faq .section-head { gap: 4px; }
+    .faq-manifest { padding: 8px; }
+    .manifest-row { grid-template-columns: minmax(0, 1fr) auto; padding: 4px 10px; font-size: 11px; }
+    .manifest-row span:nth-child(3) { display: none; }
+    .manifest-row.manifest-extra { display: none; }
+    .manifest-foot { padding: 5px 10px; font-size: 10.5px; }
+    #faq > .wrap > .grid.fill > .span-7 { width: 100%; flex: 1 1 auto; display: flex; }
+    #faq .faq { width: 100%; flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-between; }
+    #faq .faq > .faq__item { padding: 6px 0; gap: 2px; }
+    #faq .faq > .faq__item > h3 { font-size: 18px; line-height: 1.25; }
+    #faq .faq > .faq__item > p { font-size: 16px; line-height: 1.32; }
+
+    /* Close + Footer 1-screen mobile (<= 844px) */
+    footer.closing > .wrap { row-gap: 10px; }
+    .closing__cta { gap: 8px; }
+    .closing__cta .section-head { gap: 4px; }
+    .closing__cta .btn--xl { height: 46px; font-size: 16px; }
+    .closing__links { gap: 8px; }
+    .closing__links > .grid { row-gap: 6px; }
+    .closing__links .stack-4 { gap: 4px; }
+    .closing__links .footer__lede { font-size: 14px; line-height: 1.3; }
+    .footer :is(h3, h4):not(.closing__cta *) { margin-bottom: 2px; }
+    .footer__col li { line-height: 1.35; }
+    .footer__legal { padding-top: 6px; }
+  }
+</style>
+</head>
+<body class="bg-topglow">
+<!-- type: software
+     deal: hero triptych, nav nav-mega, close close-type, footer footer-dark, rhythm dark-band, buttons solid, mark initial, grounds bg-topglow + bg-field, lit sage, fx silk-folds + fluted-glass
+     moments: iris-opens (#tour) -->
+
+<header class="nav">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">Skip to content</a>
+    <a class="nav__logo" href="#top" aria-label="Drawplate"><span class="mark mark--initial">D</span>Drawplate</a>
+    <nav class="nav__links" aria-label="Main">
+      <div class="nav__item">
+        <a class="nav__link" href="#projects">Projects <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <div class="nav__menu">
+          <div class="wrap grid">
+            <div class="menu-col span-3">
+              <p class="t-label">Graphics and code</p>
+              <a href="workbench.html#subpass">Subpass<span>WebGL2 3-pass GLSL shader profiler</span></a>
+              <a href="workbench.html#cleave">Cleave<span>Structural AST move diff and 3-way merge</span></a>
+              <a href="workbench.html#cadastre">Cadastre<span>SQLite int8 vector and call-graph index</span></a>
+            </div>
+            <div class="menu-col span-3">
+              <p class="t-label">Audio and network</p>
+              <a href="workbench.html#slewbox">Slewbox<span>Web AudioWorklet and C++20 WAV synth</span></a>
+              <a href="workbench.html#tapeline">Tapeline<span>Localhost HTTP replay and schema diff</span></a>
+            </div>
+            <a class="menu-card span-4 start-9" href="workbench.html#subpass">
+              <div class="panel">
+                <div class="nav-preview">
+                  <div class="nav-preview__row"><span>subpass · WebGL2</span><span>3 passes</span></div>
+                  <div class="nav-preview__row"><span>pbr_sphere.glsl</span><span class="nav-preview__dim">RGBA16F</span></div>
+                  <div class="nav-preview__row"><span>bloom_extract</span><span class="nav-preview__dim">Karis</span></div>
+                  <div class="nav-preview__row"><span>tonemap_aces</span><span class="nav-preview__dim">0.61 ms</span></div>
+                </div>
+              </div>
+              <span class="t-card">Subpass shader profiler</span>
+              <span class="t-small muted">Edit live GLSL and toggle FBO passes</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="nav__item"><a class="nav__link" href="#workbench">Workbench</a></div>
+      <div class="nav__item"><a class="nav__link" href="#architecture">Architecture</a></div>
+      <div class="nav__item"><a class="nav__link" href="#faq">FAQ</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--primary" href="workbench.html">Try the workbench</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <!-- 1. HERO (triptych, 1 screen) -->
+  <section class="hero hero--triptych" id="hero" data-enter aria-labelledby="hero-h">
+    <div class="wrap">
+      <div class="hero-text grid hero__grid">
+        <div class="span-3">
+          <h1 id="hero-h">Local dev tools for engineers</h1>
+          <p class="hero__lead">Five zero-dependency tools in 324 KB. Profile WebGL2 shaders, merge moved AST blocks, search SQLite graphs, and replay HTTP.</p>
+        </div>
+        <div class="ly-collage span-6 start-4" role="img" aria-label="Live telemetry cards for Drawplate tools: Subpass WebGL2 shader profiler, Cleave AST move diff, Cadastre SQLite index, Slewbox C++20 DSP, and Tapeline HTTP replay">
+          <!-- Set 1: Subpass + Cleave + Cadastre + Drawplate v1.0.0 -->
+          <div class="ly-collage__set is-on">
+            <div class="ly-piece dp-card" style="left: 0%; top: 2%; width: 47%; height: 44%">
+              <div class="dp-card__top"><span>Subpass · GLSL</span><span class="dp-card__tag">WebGL2</span></div>
+              <div class="dp-card__row"><span>Pass 01</span><span class="dp-card__mono">Geometry</span></div>
+              <div class="dp-card__row"><span>Pass 02</span><span class="dp-card__mono">Bloom</span></div>
+              <div class="dp-card__row"><span>Pass 03</span><span class="dp-card__mono">Tonemap</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-card--sage" style="left: 51%; top: 2%; width: 45%; height: 44%">
+              <div class="dp-card__top"><span>Cleave · AST</span><span class="dp-card__tag">0.11 ms</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">store.mjs</span><span class="dp-card__muted">1.47 ms</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">3-way AST</span><span class="dp-card__muted">0.30 ms</span></div>
+              <div class="dp-card__row"><span>Grammars</span><span class="dp-card__mono">5 sets</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-hide-sm" style="left: 0%; top: 50%; width: 45%; height: 46%">
+              <div class="dp-card__top"><span>Cadastre · SQLite</span><span class="dp-card__tag">0.23 ms</span></div>
+              <div class="dp-card__row"><span>Symbols</span><span class="dp-card__mono">282 nodes</span></div>
+              <div class="dp-card__row"><span>Call edges</span><span class="dp-card__mono">1,456</span></div>
+              <div class="dp-card__row"><span>SQLite DB</span><span class="dp-card__mono">808 KB</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-card--dark" style="left: 49%; top: 50%; width: 47%; height: 46%">
+              <div class="dp-card__top"><span>drawplate v1.0.0</span><span class="dp-card__tag">0 deps</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">Node 26</span><span class="dp-card__muted">324 KB</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">C++20 CLI</span><span class="dp-card__muted">39.4 KB</span></div>
+              <div class="dp-card__row dp-hide-sm"><span class="dp-card__mono">Tests</span><span class="dp-card__muted">33 / 33</span></div>
+              <div class="dp-card__foot">MIT · offline</div>
+            </div>
+          </div>
+          <!-- Set 2: Cadastre + Slewbox + MCP Server + AudioWorklet -->
+          <div class="ly-collage__set" aria-hidden="true">
+            <div class="ly-piece dp-card" style="left: 0%; top: 2%; width: 47%; height: 44%">
+              <div class="dp-card__top"><span>Cadastre · index</span><span class="dp-card__tag">71.1 ms</span></div>
+              <div class="dp-card__row"><span>Indexed</span><span class="dp-card__mono">10,450 LOC</span></div>
+              <div class="dp-card__row"><span>Vectors</span><span class="dp-card__mono">int8 128d</span></div>
+              <div class="dp-card__row dp-hide-sm"><span>Trace</span><span class="dp-card__mono">0.007 ms</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-card--sage" style="left: 51%; top: 2%; width: 45%; height: 44%">
+              <div class="dp-card__top"><span>Slewbox · DSP</span><span class="dp-card__tag">48 kHz</span></div>
+              <div class="dp-card__row"><span>Block</span><span class="dp-card__mono">128 frames</span></div>
+              <div class="dp-card__row"><span>Saw WAV</span><span class="dp-card__mono">1.21 ms</span></div>
+              <div class="dp-card__row dp-hide-sm"><span>FM Bell</span><span class="dp-card__mono">1.72 ms</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-hide-sm" style="left: 0%; top: 50%; width: 45%; height: 46%">
+              <div class="dp-card__top"><span>WebMIDI + WAV</span></div>
+              <div class="dp-card__row"><span>Filter</span><span class="dp-card__mono">2x SVF</span></div>
+              <div class="dp-card__row"><span>PCM export</span><span class="dp-card__mono">16-bit</span></div>
+              <div class="dp-card__row"><span>Worklet</span><span class="dp-card__mono">0 allocs</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-card--dark" style="left: 49%; top: 50%; width: 47%; height: 46%">
+              <div class="dp-card__top"><span>cadastre mcp</span><span class="dp-card__tag">Offline</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">JSON-RPC</span><span class="dp-card__muted">2.0 stdio</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">Query p50</span><span class="dp-card__muted">0.23 ms</span></div>
+              <div class="dp-card__row dp-hide-sm"><span class="dp-card__mono">Tools</span><span class="dp-card__muted">4 ready</span></div>
+              <div class="dp-card__foot">0 sockets</div>
+            </div>
+          </div>
+          <!-- Set 3: Tapeline + Benchmarks + Repo Stats -->
+          <div class="ly-collage__set" aria-hidden="true">
+            <div class="ly-piece dp-card" style="left: 0%; top: 2%; width: 47%; height: 44%">
+              <div class="dp-card__top"><span>Tapeline · HTTP</span><span class="dp-card__tag">10.5k r/s</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">Replay p50</span><span class="dp-card__mono">0.08 ms</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">Replay p95</span><span class="dp-card__mono">0.20 ms</span></div>
+              <div class="dp-card__row dp-hide-sm"><span class="dp-card__mono">Drifts</span><span class="dp-card__mono">6 caught</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-card--sage" style="left: 51%; top: 2%; width: 45%; height: 44%">
+              <div class="dp-card__top"><span>Runtime</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">Node 26</span><span class="dp-card__muted">ESM</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">WebGL2</span><span class="dp-card__muted">FBO</span></div>
+              <div class="dp-card__row dp-hide-sm"><span class="dp-card__mono">C++20</span><span class="dp-card__muted">arm64</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-hide-sm" style="left: 0%; top: 50%; width: 45%; height: 46%">
+              <div class="dp-card__top"><span>Repository</span></div>
+              <div class="dp-card__row"><span>Source</span><span class="dp-card__mono">10,426 LOC</span></div>
+              <div class="dp-card__row"><span>Modules</span><span class="dp-card__mono">24 files</span></div>
+              <div class="dp-card__row"><span>npm deps</span><span class="dp-card__mono">0</span></div>
+            </div>
+            <div class="ly-piece dp-card dp-card--dark" style="left: 49%; top: 50%; width: 47%; height: 46%">
+              <div class="dp-card__top"><span>drawplate bench</span><span class="dp-card__tag">v1.0.0</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">subpass</span><span class="dp-card__muted">0.61 ms</span></div>
+              <div class="dp-card__row"><span class="dp-card__mono">tapeline</span><span class="dp-card__muted">0.08 ms</span></div>
+              <div class="dp-card__row dp-hide-sm"><span class="dp-card__mono">slewbox</span><span class="dp-card__muted">1.21 ms</span></div>
+              <div class="dp-card__foot">Local disk only</div>
+            </div>
+          </div>
+        </div>
+        <div class="span-3 start-10 hero__cta">
+          <a class="btn btn--primary" href="workbench.html">Try the workbench<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. INTERACTIVE WORKBENCH PREVIEW (app-frame, bg-field, 1 screen) -->
+  <section class="section bg-field" id="workbench" aria-labelledby="workbench-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="workbench-h">Drawplate local tools workbench</h2>
+        <p>Switch tools below to inspect real code from our packages, or launch the full interactive browser workbench.</p>
+      </div>
+      <div class="tabs wb-tabs" role="tablist" aria-label="Workbench mode">
+        <button class="tab" type="button" role="tab" data-wb-mode="subpass" aria-selected="true">Inspect shaders</button>
+        <button class="tab" type="button" role="tab" data-wb-mode="cleave" aria-selected="false">Compare AST</button>
+        <button class="tab" type="button" role="tab" data-wb-mode="cadastre" aria-selected="false">Search graph</button>
+        <button class="tab" type="button" role="tab" data-wb-mode="slewbox" aria-selected="false">Tune DSP</button>
+        <button class="tab" type="button" role="tab" data-wb-mode="tapeline" aria-selected="false">Replay HTTP</button>
+      </div>
+
+      <div class="ui app fill" id="wb-root">
+        <div class="app__bar">
+          <span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="app__crumb" id="wb-crumb">Drawplate <span>/ Subpass /</span> pbr_sphere.glsl</span>
+          <div class="app__tools" id="wb-tools">
+            <button class="ui-btn ui-btn--sm ui-btn--accent" type="button" data-wb-action="bloom" aria-pressed="true">Toggle bloom</button>
+            <button class="ui-btn ui-btn--sm ui-btn--ghost" type="button" data-wb-action="tonemap" aria-pressed="true">Toggle ACES</button>
+            <a class="ui-btn ui-btn--sm ui-btn--ghost app__open-full" href="workbench.html#subpass">Open full tool</a>
+          </div>
+        </div>
+        <div class="app__split">
+          <div class="app__list" role="listbox" aria-label="Project artifacts">
+            <div class="app__list-head"><span>Artifact</span><span>Measured</span></div>
+            <div class="app__rows">
+              <div class="app__row is-active" role="option" tabindex="0" aria-selected="true" data-wb-row="subpass" data-wb-file="pbr_sphere.glsl" data-wb-detail="bloom"><span class="app__tool">Subpass</span><span class="app__file">pbr_sphere.glsl</span><span class="app__metric">0.61 ms</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="subpass" data-wb-file="bloom_extract.glsl" data-wb-detail="bloom"><span class="app__tool">Subpass</span><span class="app__file">bloom_extract.glsl</span><span class="app__metric">Karis FBO</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="subpass" data-wb-file="tonemap_aces.glsl" data-wb-detail="tonemap"><span class="app__tool">Subpass</span><span class="app__file">tonemap_aces.glsl</span><span class="app__metric">ACES</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="cleave" data-wb-file="cadastre/store.mjs" data-wb-detail="ast"><span class="app__tool">Cleave</span><span class="app__file">cadastre/store.mjs</span><span class="app__metric">1.47 ms</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="cleave" data-wb-file="cleave/merge.mjs" data-wb-detail="merge"><span class="app__tool">Cleave</span><span class="app__file">cleave/merge.mjs</span><span class="app__metric">0.30 ms</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="cadastre" data-wb-file="sym: diffAst" data-wb-detail="diffAst"><span class="app__tool">Cadastre</span><span class="app__file">sym: diffAst</span><span class="app__metric">0.23 ms</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="cadastre" data-wb-file="sym: traceCallers" data-wb-detail="trace"><span class="app__tool">Cadastre</span><span class="app__file">sym: traceCallers</span><span class="app__metric">0.007 ms</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="slewbox" data-wb-file="slewbox-worklet.js" data-wb-detail="granular"><span class="app__tool">Slewbox</span><span class="app__file">slewbox-worklet.js</span><span class="app__metric">48 kHz</span></div>
+              <div class="app__row" role="option" tabindex="0" aria-selected="false" data-wb-row="tapeline" data-wb-file="tapeline-cassette-v2.json" data-wb-detail="v2"><span class="app__tool">Tapeline</span><span class="app__file">cassette-v2.json</span><span class="app__metric">0.08 ms</span></div>
+            </div>
+          </div>
+
+          <!-- Pane 1: Subpass -->
+          <div class="app__pane" data-wb-pane="subpass">
+            <div class="app__pane-head">
+              <span>Subpass · WebGL2 GLSL ES 3.00</span>
+              <span class="ui-chip ui-chip--accent" id="wb-gpu-total">3 passes active</span>
+              <span class="ui-chip ui-chip--plain" id="wb-gpu-mip">RGBA16F FBO · 0.61 ms check</span>
+            </div>
+            <div class="app__chips">
+              <span class="app__readout" id="wb-pass-geometry">01 geometry <span>FBO</span></span>
+              <span class="app__readout is-focus" id="wb-pass-bloom">02 bloom <span>Karis</span></span>
+              <span class="app__readout" id="wb-pass-tonemap">03 tonemap <span>ACES</span></span>
+            </div>
+            <div class="ui ui-diff app__diff">
+              <div class="ui-diff__hunk"><span>@@ bloom_extract.glsl @@</span> <em class="ui-diff__sig" id="wb-wgsl-sig">Karis-weighted luminance threshold</em></div>
+              <div class="ui-diff__lines">
+                <div class="ui-diff__ln"><i>1</i><i>1</i><span class="ui-diff__code"><span class="k">#version 300 es</span></span></div>
+                <div class="ui-diff__ln"><i>2</i><i>2</i><span class="ui-diff__code"><span class="k">precision highp float;</span></span></div>
+                <div class="ui-diff__ln"><i>3</i><i>3</i><span class="ui-diff__code"><span class="k">uniform sampler2D</span> u_sceneTex;</span></div>
+                <div class="ui-diff__ln is-del"><i>4</i><i></i><span class="ui-diff__code"><span class="k">uniform float</span> u_bloomThreshold = <mark class="ui-diff__w">0.85</mark>;</span></div>
+                <div class="ui-diff__ln is-add"><i></i><i>4</i><span class="ui-diff__code"><span class="k">uniform float</span> u_bloomThreshold = <mark class="ui-diff__w">0.68</mark>;</span></div>
+                <div class="ui-diff__ln"><i>5</i><i>5</i><span class="ui-diff__code"><span class="k">float</span> <span class="f">karisWeight</span>(vec3 c) {</span></div>
+                <div class="ui-diff__ln"><i>6</i><i>6</i><span class="ui-diff__code">  <span class="k">return</span> 1.0 / (1.0 + dot(c, vec3(0.2126, 0.7152, 0.0722)));</span></div>
+                <div class="ui-diff__ln"><i>7</i><i>7</i><span class="ui-diff__code">}</span></div>
+                <div class="ui-diff__ln"><i>8</i><i>8</i><span class="ui-diff__code"><span class="k">void</span> <span class="f">main</span>() {</span></div>
+                <div class="ui-diff__ln is-add"><i></i><i>9</i><span class="ui-diff__code">  vec3 t0 = <span class="f">softThreshold</span>(texture(u_sceneTex, vUv).rgb, u_bloomThreshold);</span></div>
+                <div class="ui-diff__ln"><i>9</i><i>10</i><span class="ui-diff__code">  fragColor = vec4(t0 * <span class="f">karisWeight</span>(t0), 1.0);</span></div>
+                <div class="ui-diff__ln"><i>10</i><i>11</i><span class="ui-diff__code">}</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 2: Cleave -->
+          <div class="app__pane" data-wb-pane="cleave" hidden>
+            <div class="app__pane-head">
+              <span>Cleave · Isomorphic ESM AST Diff</span>
+              <span class="ui-chip ui-chip--accent" id="wb-ast-badge">Moved 1 block · 70 lines saved (1.47 ms)</span>
+            </div>
+            <div class="ui ui-diff app__diff" id="wb-cleave-diff">
+              <div class="ui-diff__hunk"><span>@@ store.mjs AST Move @@</span> <em class="ui-diff__sig" id="wb-cleave-sig">CadastreStore.indexDirectory (similarity >= 0.65)</em></div>
+              <div class="ui-diff__lines">
+                <div class="ui-diff__ln"><i>42</i><i>190</i><span class="ui-diff__code"><span class="k">export function</span> <span class="f">computeGain</span>(db) {</span></div>
+                <div class="ui-diff__ln is-add"><i></i><i>191</i><span class="ui-diff__code">  <span class="k">if</span> (!Number.<span class="f">isFinite</span>(db)) <span class="k">return</span> 0;</span></div>
+                <div class="ui-diff__ln"><i>43</i><i>192</i><span class="ui-diff__code">  <span class="k">const</span> linear = Math.<span class="f">pow</span>(10, db / 20);</span></div>
+                <div class="ui-diff__ln is-del"><i>44</i><i></i><span class="ui-diff__code">  <span class="k">return</span> <span class="f">clamp</span>(linear, 0, <mark class="ui-diff__w">4</mark>);</span></div>
+                <div class="ui-diff__ln is-add"><i></i><i>193</i><span class="ui-diff__code">  <span class="k">return</span> <span class="f">clamp</span>(linear, 0, <mark class="ui-diff__w">8</mark>);</span></div>
+                <div class="ui-diff__ln"><i>45</i><i>194</i><span class="ui-diff__code">}</span></div>
+                <div class="ui-diff__ln"><i>46</i><i>195</i><span class="ui-diff__code"><span class="n">// 3-way merge reconciles moved + edited blocks in 0.30 ms</span></span></div>
+                <div class="ui-diff__ln"><i>47</i><i>196</i><span class="ui-diff__code"><span class="n">// Supported: JS/TS, Rust, Python, Go, C/C++</span></span></div>
+                <div class="ui-diff__ln"><i>48</i><i>197</i><span class="ui-diff__code"><span class="k">export function</span> <span class="f">merge3</span>(base, left, right, lang) {</span></div>
+                <div class="ui-diff__ln"><i>49</i><i>198</i><span class="ui-diff__code">  <span class="k">return</span> <span class="f">reconcileMovedBlocks</span>(base, left, right, lang);</span></div>
+                <div class="ui-diff__ln"><i>50</i><i>199</i><span class="ui-diff__code">}</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 3: Cadastre -->
+          <div class="app__pane" data-wb-pane="cadastre" hidden>
+            <div class="app__pane-head">
+              <span>Cadastre · node:sqlite + int8 128d</span>
+              <span class="ui-chip ui-chip--accent" id="wb-cad-latency">Hybrid int8 · 0.23 ms p50</span>
+            </div>
+            <div class="ui ui-diff app__diff">
+              <div class="ui-diff__hunk"><span>QUERY</span> <em class="ui-diff__sig" id="wb-cad-sig">diffAst --mode hybrid (282 symbols, 1,456 edges)</em></div>
+              <div class="ui-diff__lines" id="wb-cad-lines">
+                <div class="ui-diff__ln is-add"><i>01</i><i>0.96</i><span class="ui-diff__code">packages/cleave/diff.mjs:290   <span class="k">function</span> <span class="f">diffAst</span></span></div>
+                <div class="ui-diff__ln is-add"><i>02</i><i>0.84</i><span class="ui-diff__code">packages/cleave/merge.mjs:290  <span class="k">function</span> <span class="f">merge3</span></span></div>
+                <div class="ui-diff__ln"><i>03</i><i>0.79</i><span class="ui-diff__code">packages/cleave/index.mjs:215  <span class="k">function</span> <span class="f">runCleaveCli</span></span></div>
+                <div class="ui-diff__ln"><i>04</i><i>0.74</i><span class="ui-diff__code">bin/serve.mjs:183              <span class="k">function</span> <span class="f">handleApi</span></span></div>
+                <div class="ui-diff__ln"><i>05</i><i>0.71</i><span class="ui-diff__code">bin/bench.mjs:112              <span class="k">function</span> <span class="f">benchCleave</span></span></div>
+                <div class="ui-diff__ln"><i>06</i><i></i><span class="ui-diff__code"><span class="n">--- Call Graph Trace (0.007 ms) ---</span></span></div>
+                <div class="ui-diff__ln"><i>07</i><i></i><span class="ui-diff__code">bin/drawplate.mjs -&gt; runCleaveCli -&gt; diffAst -&gt; parseBlocks</span></div>
+                <div class="ui-diff__ln"><i>08</i><i></i><span class="ui-diff__code">sqlite_db: 808 KB | index: 71.1 ms cold / 3.72 ms incremental</span></div>
+                <div class="ui-diff__ln"><i>09</i><i></i><span class="ui-diff__code">mcp: JSON-RPC 2.0 stdio (cadastre_search, cadastre_callers)</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 4: Slewbox -->
+          <div class="app__pane" data-wb-pane="slewbox" hidden>
+            <div class="app__pane-head">
+              <span>Slewbox · Web AudioWorklet + C++20 CLI</span>
+              <span class="ui-chip ui-chip--accent" id="wb-dsp-preset">Patch: Granular Cloud</span>
+              <span class="ui-chip ui-chip--plain">39.4 KB arm64 binary</span>
+            </div>
+            <div class="app__dsp-strip">
+              <dl class="app__dsp-grid">
+                <div><dt>Cutoff</dt><dd id="wb-dsp-cut">3,600 Hz</dd></div>
+                <div><dt>Resonance</dt><dd id="wb-dsp-res">0.22</dd></div>
+                <div><dt>Grain size</dt><dd id="wb-dsp-grain">68 ms</dd></div>
+                <div><dt>Density</dt><dd id="wb-dsp-dens">26 Hz</dd></div>
+                <div><dt>Attack</dt><dd id="wb-dsp-rise">80 ms</dd></div>
+                <div><dt>C++20 WAV</dt><dd id="wb-dsp-load">1.35 ms</dd></div>
+              </dl>
+              <svg class="app__scope" viewBox="0 0 220 56" aria-label="Oscilloscope waveform readout">
+                <line x1="0" y1="28" x2="220" y2="28" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1"/>
+                <path id="wb-dsp-wave" d="M0 28 Q14 4 28 28 T56 28 T84 28 T112 28 T140 28 T168 28 T196 28 T220 28" fill="none" stroke="#5cc481" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="ui ui-diff app__diff">
+              <div class="ui-diff__hunk"><span>slewbox-worklet.js</span> <em class="ui-diff__sig">48 kHz / 128-frame zero-alloc process()</em></div>
+              <div class="ui-diff__lines">
+                <div class="ui-diff__ln"><i>1</i><i>1</i><span class="ui-diff__code">{</span></div>
+                <div class="ui-diff__ln is-add"><i></i><i>2</i><span class="ui-diff__code">  <span class="k">"name"</span>: <span class="s" id="wb-dsp-json-name">"Granular Cloud"</span>, <span class="k">"engine"</span>: <span class="s">"granular"</span>,</span></div>
+                <div class="ui-diff__ln"><i>3</i><i>3</i><span class="ui-diff__code">  <span class="k">"sampleRate"</span>: 48000, <span class="k">"blockFrames"</span>: 128,</span></div>
+                <div class="ui-diff__ln"><i>4</i><i>4</i><span class="ui-diff__code">  <span class="k">"filter"</span>: <span class="s">"2x_chamberlin_svf"</span>, <span class="k">"clipper"</span>: <span class="s">"tanh"</span>,</span></div>
+                <div class="ui-diff__ln"><i>5</i><i>5</i><span class="ui-diff__code">  <span class="k">"nativeCli"</span>: <span class="s">"clang++ -std=c++20 -O2 (40,376 B)"</span>,</span></div>
+                <div class="ui-diff__ln"><i>6</i><i>6</i><span class="ui-diff__code">  <span class="k">"export"</span>: <span class="s">"pcm16_stereo_riff_wav"</span></span></div>
+                <div class="ui-diff__ln"><i>7</i><i>7</i><span class="ui-diff__code">}</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 5: Tapeline -->
+          <div class="app__pane" data-wb-pane="tapeline" hidden>
+            <div class="app__pane-head">
+              <span>Tapeline · node:http Cassette Replay</span>
+              <span class="ui-chip ui-chip--accent" id="wb-http-status">10,552 req/s · 0.08 ms p50</span>
+            </div>
+            <div class="app__chips">
+              <span class="app__readout is-focus" id="wb-http-route">GET /api/v1/index/search <span>+214.9%</span></span>
+              <span class="app__readout">drifts <span>6 (4 breaking)</span></span>
+              <span class="app__readout">p95 <span>0.20 ms</span></span>
+            </div>
+            <div class="ui ui-diff app__diff">
+              <div class="ui-diff__hunk"><span>CASSETTE DIFF v1 vs v2</span> <em class="ui-diff__sig" id="wb-http-sig">tapeline-cassette-v2.json · 4 breaking changes</em></div>
+              <div class="ui-diff__lines">
+                <div class="ui-diff__ln"><i>1</i><i>1</i><span class="ui-diff__code">GET /api/v1/workspaces      200 -&gt; 200  (9.40 ms)</span></div>
+                <div class="ui-diff__ln is-del"><i>2</i><i></i><span class="ui-diff__code">- DELETE /api/v1/legacy/token   <mark class="ui-diff__w">removed</mark> [breaking]</span></div>
+                <div class="ui-diff__ln is-add"><i></i><i>2</i><span class="ui-diff__code">+ GET /api/v1/replay/health     <mark class="ui-diff__w">added</mark> (200)</span></div>
+                <div class="ui-diff__ln is-del"><i>3</i><i></i><span class="ui-diff__code">- POST /api/v1/shaders/compile  status 200 -&gt; <mark class="ui-diff__w">422</mark></span></div>
+                <div class="ui-diff__ln is-add"><i></i><i>3</i><span class="ui-diff__code">+ $.hits[].score: number -&gt; <mark class="ui-diff__w">string</mark> [breaking]</span></div>
+                <div class="ui-diff__ln"><i>4</i><i>4</i><span class="ui-diff__code">+ $.metrics.p95Ms: added (number)</span></div>
+                <div class="ui-diff__ln"><i>5</i><i>5</i><span class="ui-diff__code">Loopback replay: 300 hits, 0 misses (0.076 ms p50)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. FOUR CORE PROJECTS 2x2 (features-2x2, g2 = 2 screens) -->
+  <section class="section g2" id="projects" aria-labelledby="projects-h">
+    <div class="wrap">
+      <div class="group">
+        <div class="section-head">
+          <h2 id="projects-h">Four more tools on disk. <span class="muted">Each solves one narrow job.</span></h2>
+        </div>
+        <div class="grid">
+          <article class="card card--row card--open span-6" id="project-cleave">
+            <h3>Merge local code diffs</h3>
+            <p>Cleave matches relocated functions across five language families at 0.65 similarity. Three-way AST merges resolve moved edits in 0.30 ms.</p>
+            <div class="panel" data-fx="fluted-glass" data-fx-seed="21">
+              <div class="stage stage--fade-b">
+                <div class="at-rise fit to-edge" style="--ax:24px;--ay:24px;--ay-sm:12px;--fit-max:432px">
+                  <div class="ui ui-panel ui-term" data-ui="terminal-run">
+                    <div class="ui-term__head">
+                      <span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                      <span class="ui-term__title">cleave · ast</span>
+                      <span class="ui-meta">node</span>
+                      <span class="ui-spacer"></span>
+                      <span class="ui-chip ui-chip--plain ui-term__branch">main</span>
+                    </div>
+                    <div class="ui-term__screen" data-term-screen>
+                      <div class="ui-term__track" data-term-track>
+                        <div class="ui-term__ln ui-term__cmd"><span class="ui-term__cwd">~/drawplate</span><span class="ui-term__sig">$</span><span class="ui-term__typed" data-term-cmd>cleave diff a.mjs b.mjs</span></div>
+                        <div class="ui-term__ln ui-term__meter" data-term-out data-term-meter><span class="ui-term__bar" style="--p:1"><i></i></span><span class="ui-term__count" data-term-count>3 presets</span></div>
+                        <div class="ui-term__ln ui-term__log" data-term-out data-term-step><svg class="ui-term__tick" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.8 2.8 6.2-6.4"/></svg><span class="ui-term__path">store.mjs</span><span class="ui-term__n">70 saved</span><span class="ui-term__t">1.47ms</span></div>
+                        <div class="ui-term__ln ui-term__log" data-term-out data-term-step><svg class="ui-term__tick" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.8 2.8 6.2-6.4"/></svg><span class="ui-term__path">jsMoveAndEdit</span><span class="ui-term__n">8 saved</span><span class="ui-term__t">0.11ms</span></div>
+                        <div class="ui-term__ln ui-term__log" data-term-out data-term-step><svg class="ui-term__tick" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.8 2.8 6.2-6.4"/></svg><span class="ui-term__path">merge3</span><span class="ui-term__n">0 conflicts</span><span class="ui-term__t">0.30ms</span></div>
+                        <div class="ui-term__ln ui-term__log" data-term-out data-term-step><svg class="ui-term__tick" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 2.8 2.8 6.2-6.4"/></svg><span class="ui-term__path">myers_line</span><span class="ui-term__n">480 LOC</span><span class="ui-term__t">0.07ms</span></div>
+                        <div class="ui-term__ln ui-term__gap" data-term-out aria-hidden="true"></div>
+                        <div class="ui-term__ln ui-term__sum" data-term-out><span class="ui-term__key">Moved AST</span><span class="ui-term__val">sim &gt;= 0.65</span><span class="ui-term__dim">(AST)</span></div>
+                        <div class="ui-term__ln ui-term__done" data-term-out data-term-done><span class="ui-term__ok"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 8.3 2.4 2.4 4.6-5"/></svg></span><b>Merged</b><span class="ui-term__dim">in 0.30ms</span></div>
+                        <div class="ui-term__ln ui-term__cmd" data-term-next><span class="ui-term__cwd">~/drawplate</span><span class="ui-term__sig">$</span><span class="ui-term__typed"></span><i class="ui-term__caret" aria-hidden="true"></i></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card--row card--open span-6" id="project-cadastre">
+            <h3>Search local code graphs</h3>
+            <p>Cadastre indexes symbols and call edges into an 808 KB SQLite database with int8 vectors. Hybrid queries return in 0.23 ms over CLI or MCP.</p>
+            <div class="panel" data-fx="fluted-glass" data-fx-seed="34">
+              <div class="stage stage--fade-b">
+                <div class="at-rise fit to-edge" style="--ax:24px;--ay:24px;--ay-sm:12px;--fit-max:424px">
+                  <div class="ui ui-panel ui-search" data-ui="search" data-ui-opts='{"queries":[{"q":"diffAst","rows":[["<svg class=\"ui-icon\" viewBox=\"0 0 16 16\"><path d=\"M4 2.5h5l3 3v8H4z\"/><path d=\"M9 2.5v3h3\"/></svg>","<b>cleave/diff.mjs:290</b> · 0.96","282 syms"],["<svg class=\"ui-icon\" viewBox=\"0 0 16 16\"><path d=\"M4 2.5h5l3 3v8H4z\"/><path d=\"M9 2.5v3h3\"/></svg>","<b>cleave/merge.mjs:290</b> · 0.84","1,456 edges"],["<svg class=\"ui-icon\" viewBox=\"0 0 16 16\"><path d=\"M3 4.5h10M3 8h10M3 11.5h6\"/></svg>","<b>cleave/index.mjs:215</b> · 0.79","CLI"],["<svg class=\"ui-icon\" viewBox=\"0 0 16 16\"><path d=\"M4 2.5h5l3 3v8H4z\"/><path d=\"M9 2.5v3h3\"/></svg>","<b>bin/serve.mjs:183</b> · 0.74","HTTP API"]]}]}'>
+                    <div class="ui-search__field">
+                      <svg class="ui-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+                      <span class="ui-search__q"><span data-search-q>diffAst</span><i class="ui-search__caret"></i></span>
+                      <kbd class="ui-search__kbd">0.23 ms</kbd>
+                    </div>
+                    <div class="ui-search__group">node:sqlite int8 · 10,450 LOC</div>
+                    <ul class="ui-search__list" data-search-list>
+                      <li class="ui-search__row is-sel"><span class="ui-search__ico"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M4 2.5h5l3 3v8H4z"/><path d="M9 2.5v3h3"/></svg></span><span class="ui-search__t"><b>cleave/diff.mjs:290</b> · 0.96</span><span class="ui-search__m">fn</span></li>
+                      <li class="ui-search__row"><span class="ui-search__ico"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M4 2.5h5l3 3v8H4z"/><path d="M9 2.5v3h3"/></svg></span><span class="ui-search__t"><b>cleave/merge.mjs:290</b> · 0.84</span><span class="ui-search__m">fn</span></li>
+                      <li class="ui-search__row"><span class="ui-search__ico"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M3 4.5h10M3 8h10M3 11.5h6"/></svg></span><span class="ui-search__t"><b>cleave/index.mjs:215</b> · 0.79</span><span class="ui-search__m">CLI</span></li>
+                      <li class="ui-search__row"><span class="ui-search__ico"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M4 2.5h5l3 3v8H4z"/><path d="M9 2.5v3h3"/></svg></span><span class="ui-search__t"><b>bin/serve.mjs:183</b> · 0.74</span><span class="ui-search__m">API</span></li>
+                    </ul>
+                    <div class="ui-search__foot"><span>808 KB SQLite</span><span>Stdio MCP</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="grid">
+        <article class="card card--row card--open span-6" id="project-slewbox">
+          <h3>Run local audio DSP</h3>
+          <p>Slewbox pairs a zero-alloc 48 kHz AudioWorklet synth with a 39.4 KB C++20 CLI. Render 1.5 s stereo WAV files in 1.21 ms.</p>
+          <div class="panel" data-fx="fluted-glass" data-fx-seed="48">
+            <div class="stage stage--fade-b">
+              <div class="at-rise fit to-edge" style="--ax:24px;--ay:24px;--ay-sm:12px;--fit-max:408px">
+                <div class="ui ui-panel ui-toggles" data-ui="toggles">
+                  <div class="ui-head">
+                    <svg class="ui-icon ui-toggles__ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h2l2-4 3 8 2-4h3"/></svg>
+                    <div class="ui-title">Slewbox · AudioWorklet</div>
+                    <span class="ui-spacer"></span>
+                    <div class="ui-meta" data-tg-count>4 of 5 on</div>
+                  </div>
+                  <ul class="ui-toggles__list">
+                    <li class="ui-tg">
+                      <span class="ui-tg__text"><span class="ui-tg__label">48 kHz / 128-frame worklet</span><span class="ui-tg__sub">0 main-thread allocations</span></span>
+                      <button class="ui-switch is-on" type="button" role="switch" aria-checked="true" aria-label="48 kHz 128-frame worklet"><i></i></button>
+                    </li>
+                    <li class="ui-tg">
+                      <span class="ui-tg__text"><span class="ui-tg__label">Granular Hann window</span><span class="ui-tg__sub">68 ms grain · 26 Hz density</span></span>
+                      <button class="ui-switch is-on" type="button" role="switch" aria-checked="true" aria-label="Granular Hann window"><i></i></button>
+                    </li>
+                    <li class="ui-tg">
+                      <span class="ui-tg__text"><span class="ui-tg__label">WebMIDI CC74 filter</span><span class="ui-tg__sub">2x Chamberlin SVF + tanh</span></span>
+                      <button class="ui-switch is-on" type="button" role="switch" aria-checked="true" aria-label="WebMIDI CC74 filter"><i></i></button>
+                    </li>
+                    <li class="ui-tg">
+                      <span class="ui-tg__text"><span class="ui-tg__label">C++20 native WAV CLI</span><span class="ui-tg__sub">39.4 KB binary · 1.21 ms</span></span>
+                      <button class="ui-switch is-on" type="button" role="switch" aria-checked="true" aria-label="C++20 native WAV CLI"><i></i></button>
+                    </li>
+                    <li class="ui-tg">
+                      <span class="ui-tg__text"><span class="ui-tg__label">16-bit PCM WAV export</span><span class="ui-tg__sub">72,000 stereo frames</span></span>
+                      <button class="ui-switch" type="button" role="switch" aria-checked="false" aria-label="16-bit PCM WAV export"><i></i></button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card--row card--open span-6" id="project-tapeline">
+          <h3>Replay local API cassettes</h3>
+          <p>Tapeline proxies localhost HTTP into sorted JSON cassettes for offline replay at 10,552 req/s. Catch breaking JSON schema drift automatically.</p>
+          <div class="panel" data-fx="fluted-glass" data-fx-seed="63">
+            <div class="stage stage--fade-b">
+              <div class="at-rise fit to-edge" style="--ax:24px;--ay:24px;--ay-sm:12px;--fit-max:424px">
+                <div class="ui ui-panel ui-code" data-ui="code">
+                  <div class="ui-code__tabs">
+                    <span class="ui-code__tab is-on"><i class="ui-code__lang">JSON</i>cassette-v2.json</span>
+                    <span class="ui-spacer"></span>
+                    <span class="ui-chip ui-chip--plain ui-code__chip" data-code-chip>6 drifts</span>
+                  </div>
+                  <pre class="ui-code__pre"><code><span class="ui-code__ln" data-n="1"><span class="k">cassette:</span> tapeline-cassette-v2.json</span>
+<span class="ui-code__ln" data-n="2"><span class="k">replay:</span> 10,552 req/s (0.08ms p50)</span>
+<span class="ui-code__ln" data-n="3" data-note="Status changed 200 to 422."><span class="f">POST</span> /v1/shaders/compile <span class="n">422</span></span>
+<span class="ui-code__ln is-mark" data-n="4" data-note="Latency +214.9% regression."><span class="f">GET</span>  /v1/index/search <span class="n">200 +214.9%</span></span>
+<span class="ui-code__ln" data-n="5"><span class="f">DEL</span>  /v1/legacy/token <span class="n">removed</span></span>
+<span class="ui-code__ln" data-n="6"><span class="f">ADD</span>  /v1/replay/health <span class="n">200</span></span>
+<span class="ui-code__ln" data-n="7"><span class="k">schema_drifts:</span> 6 (4 breaking)</span>
+<span class="ui-code__ln" data-n="8"><span class="k">p95_replay:</span> 0.20ms</span></code></pre>
+                  <div class="ui-code__hint" data-code-hint><span class="ui-dot"></span><span data-code-text>Offline replay matched 300 of 300 hits.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. STATEMENT + LOCAL BENCHMARK PROOF (2-col split on lit sage panel, 1 screen) -->
+  <section class="section" id="statement" aria-labelledby="statement-h">
+    <div class="wrap">
+      <div class="grid grid--top fill">
+        <div class="span-5 split-col">
+          <div class="section-head" style="margin-bottom: 0">
+            <h2 id="statement-h">Local tools run offline</h2>
+            <p>Every Drawplate package runs in Node.js 26 ESM, browser WebGL2, or Web AudioWorklet with zero npm dependencies. All indexes and cassettes live on disk.</p>
+          </div>
+          <dl class="stmt-facts">
+            <div><dt>Source footprint</dt><dd>323.9 KB (10.4k LOC)</dd></div>
+            <div><dt>Runtime packages</dt><dd>0 npm dependencies</dd></div>
+            <div><dt>Storage formats</dt><dd>SQLite, JSON, WAV</dd></div>
+            <div><dt>Test coverage</dt><dd>33 / 33 passing</dd></div>
+          </dl>
+        </div>
+        <div class="span-7">
+          <div class="panel stmt-panel">
+            <div class="ui ui-panel stmt-bench">
+              <div class="ui-head">
+                <span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <div class="ui-title">drawplate bench (arm64)</div>
+                <span class="ui-spacer"></span>
+                <span class="ui-meta">runs=15</span>
+              </div>
+              <div class="stmt-bench__cmd">$ node bin/drawplate.mjs bench</div>
+              <div class="stmt-bench__cols">
+                <span>Tool</span>
+                <span>Size</span>
+                <span class="stmt-hide-sm">Median</span>
+                <span>Measured result</span>
+              </div>
+              <div class="stmt-bench__rows">
+                <div class="stmt-bench__row"><span>subpass</span><span>72 KB</span><span class="stmt-hide-sm">0.61 ms</span><span>6 GLSL shaders</span></div>
+                <div class="stmt-bench__row"><span>cleave</span><span>80 KB</span><span class="stmt-hide-sm">0.11 ms</span><span>1.47 ms (480 LOC)</span></div>
+                <div class="stmt-bench__row"><span>cadastre</span><span>76 KB</span><span class="stmt-hide-sm">0.23 ms</span><span>808 KB · 282 syms</span></div>
+                <div class="stmt-bench__row"><span>slewbox</span><span>39.4 KB</span><span class="stmt-hide-sm">1.21 ms</span><span>1.5s 48 kHz WAV</span></div>
+                <div class="stmt-bench__row"><span>tapeline</span><span>40 KB</span><span class="stmt-hide-sm">0.08 ms</span><span>10,552 req/s</span></div>
+              </div>
+              <div class="stmt-bench__foot">Total packages + bin: 323.9 KB · 24 files · 0 external deps</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. WORKFLOW TOUR (tabs-tour on dark-band + iris-opens, 1 screen) -->
+  <section class="section ground-inverse" id="tour" data-moment="iris-opens" data-moment-opts='{"from":"base"}' aria-labelledby="tour-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="tour-h">Daily workflows across five tools</h2>
+        <p>Select a stage below to inspect the real Drawplate CLI command and measured output.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Developer workflows">
+        <button class="tab" type="button" role="tab" id="tab-1" aria-selected="true" aria-controls="tour-copy-1 tour-view-1">Profile shaders</button>
+        <button class="tab" type="button" role="tab" id="tab-2" aria-selected="false" aria-controls="tour-copy-2 tour-view-2">Merge diffs</button>
+        <button class="tab" type="button" role="tab" id="tab-3" aria-selected="false" aria-controls="tour-copy-3 tour-view-3">Search code</button>
+        <button class="tab" type="button" role="tab" id="tab-4" aria-selected="false" aria-controls="tour-copy-4 tour-view-4">Replay APIs</button>
+      </div>
+      <div class="grid tour-grid">
+        <div class="span-5 tour-copy">
+          <div role="tabpanel" id="tour-copy-1" aria-labelledby="tab-1">
+            <div>
+              <h3>Subpass WebGL2 shader profiler</h3>
+              <p>Run a 3-pass WebGL2 FBO pipeline in browser and analyze GLSL/WGSL files via CLI.</p>
+            </div>
+            <ul class="tour-specs">
+              <li><span>Static check</span><span>0.61 ms (6 shaders)</span></li>
+              <li><span>FBO pipeline</span><span>Geometry, Bloom, ACES</span></li>
+              <li><span>Browser presets</span><span>3 GLSL ES 3.00</span></li>
+            </ul>
+          </div>
+          <div role="tabpanel" id="tour-copy-2" aria-labelledby="tab-2" hidden>
+            <div>
+              <h3>Cleave structural AST merger</h3>
+              <p>Pair relocated functions across five languages before line diffing to avoid false merge conflicts.</p>
+            </div>
+            <ul class="tour-specs">
+              <li><span>Language parsers</span><span>5 families (ESM)</span></li>
+              <li><span>480-line AST diff</span><span>1.47 ms (70 saved)</span></li>
+              <li><span>3-way auto-merge</span><span>0.30 ms median</span></li>
+            </ul>
+          </div>
+          <div role="tabpanel" id="tour-copy-3" aria-labelledby="tab-3" hidden>
+            <div>
+              <h3>Cadastre SQLite symbol search</h3>
+              <p>Index codebases into one SQLite DB with int8 vectors, BM25 ranking, and stdio MCP.</p>
+            </div>
+            <ul class="tour-specs">
+              <li><span>Hybrid query</span><span>0.23 ms p50 / 0.36 p95</span></li>
+              <li><span>Index size</span><span>808 KB SQLite</span></li>
+              <li><span>Caller trace</span><span>0.007 ms (depth 3)</span></li>
+            </ul>
+          </div>
+          <div role="tabpanel" id="tour-copy-4" aria-labelledby="tab-4" hidden>
+            <div>
+              <h3>Tapeline HTTP cassette proxy</h3>
+              <p>Record localhost HTTP to JSON cassettes, replay offline, and flag breaking schema drift.</p>
+            </div>
+            <ul class="tour-specs">
+              <li><span>Loopback replay</span><span>0.08 ms p50 / 0.20 p95</span></li>
+              <li><span>Throughput</span><span>10,552 req/s</span></li>
+              <li><span>Schema diff</span><span>Deep key and type drift</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="span-7">
+          <div class="panel tour-panel" data-fx="silk-folds" data-fx-seed="17">
+            <div class="stage stage--fade-b">
+              <div class="at-rise fit to-edge" style="--ax:28px;--ay:28px;--ay-sm:14px;--fit-max:580px">
+                <div class="ui ui-panel tour-term" role="tabpanel" id="tour-view-1" aria-labelledby="tab-1">
+                  <div class="ui-head"><span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span><div class="ui-title">subpass · analyzer</div><span class="ui-spacer"></span><span class="ui-meta">GLSL 300 es</span></div>
+                  <div class="tour-term__body">
+                    <div class="tour-cmd"><i>$</i>node bin/drawplate.mjs subpass check pbr_sphere</div>
+                    <div class="tour-dim">Stage: fragment | Precision: highp | 3 uniforms</div>
+                    <div class="tour-row"><span>Pass 01 geometry</span><span>RGBA16F</span><span class="tour-dim">PBR raymarch</span></div>
+                    <div class="tour-row"><span>Pass 02 bloom_extract</span><span>Half-res</span><span class="tour-dim">Karis + blur</span></div>
+                    <div class="tour-row"><span>Pass 03 tonemap_aces</span><span>Composite</span><span class="tour-dim">ACES + sRGB</span></div>
+                    <div>Analyzed 6 built-in shaders (630 lines)</div>
+                    <div class="tour-ok">0 syntax errors · 0.61 ms total static check</div>
+                  </div>
+                </div>
+                <div class="ui ui-panel tour-term" role="tabpanel" id="tour-view-2" aria-labelledby="tab-2" hidden>
+                  <div class="ui-head"><span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span><div class="ui-title">cleave · ast merge</div><span class="ui-spacer"></span><span class="ui-meta">ESM</span></div>
+                  <div class="tour-term__body">
+                    <div class="tour-cmd"><i>$</i>node bin/drawplate.mjs cleave diff a.mjs b.mjs</div>
+                    <div class="tour-dim">Languages: JS/TS, Rust, Python, Go, C/C++</div>
+                    <div>store.mjs (480 lines): 1 moved block, 70 lines saved</div>
+                    <div>jsMoveAndEdit preset: 0.11 ms (8 lines saved)</div>
+                    <div>merge3 (move + body edit): 0.30 ms, 0 conflicts</div>
+                    <div class="tour-ok">Myers O((N+M)D) line diff: 0.07 ms (480 lines)</div>
+                  </div>
+                </div>
+                <div class="ui ui-panel tour-term" role="tabpanel" id="tour-view-3" aria-labelledby="tab-3" hidden>
+                  <div class="ui-head"><span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span><div class="ui-title">cadastre · sqlite index</div><span class="ui-spacer"></span><span class="ui-meta">node:sqlite</span></div>
+                  <div class="tour-term__body">
+                    <div class="tour-cmd"><i>$</i>node bin/drawplate.mjs cadastre query diffAst</div>
+                    <div class="tour-dim">Corpus: 24 files, 10,450 LOC, 282 symbols, 1,456 edges</div>
+                    <div>DB file: .drawplate/cadastre.sqlite (808 KB)</div>
+                    <div>Cold index: 71.1 ms | Incremental skip: 3.72 ms</div>
+                    <div>Hit 01: packages/cleave/diff.mjs:290 (0.96)</div>
+                    <div class="tour-ok">Hybrid int8+BM25: 0.23 ms p50 · stdio MCP ready</div>
+                  </div>
+                </div>
+                <div class="ui ui-panel tour-term" role="tabpanel" id="tour-view-4" aria-labelledby="tab-4" hidden>
+                  <div class="ui-head"><span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span><div class="ui-title">tapeline · replay proxy</div><span class="ui-spacer"></span><span class="ui-meta">node:http</span></div>
+                  <div class="tour-term__body">
+                    <div class="tour-cmd"><i>$</i>node bin/drawplate.mjs tapeline diff v1.json v2.json</div>
+                    <div class="tour-dim">Cassette: 6 routes · 10,552 req/s loopback replay</div>
+                    <div class="tour-row"><span>POST /shaders/compile</span><span>200 -&gt; 422</span><span class="tour-dim">status drift</span></div>
+                    <div class="tour-row"><span>GET /index/search</span><span>+214.9%</span><span class="tour-dim">latency reg</span></div>
+                    <div class="tour-row"><span>DEL /legacy/token</span><span>removed</span><span class="tour-dim">breaking</span></div>
+                    <div class="tour-ok">Replay p50: 0.08 ms · 300/300 hits, 0 misses</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. LOCAL ARCHITECTURE (split-text-left + pulsing data-diagram, 1 screen desktop & mobile) -->
+  <section class="section" id="architecture" aria-labelledby="architecture-h">
+    <div class="wrap">
+      <div class="grid grid--top fill">
+        <div class="span-5 split-col">
+          <div class="section-head" style="margin-bottom: 0">
+            <h2 id="architecture-h">Shared local runtime architecture</h2>
+            <p>All five packages share isomorphic ESM cores that run identically in Node.js 26 and the browser, paired with a native C++20 DSP binary.</p>
+          </div>
+          <ul class="checks">
+            <li>Zero runtime npm dependencies, using built-in node:sqlite, node:http, and node:test.</li>
+            <li>Browser-native WebGL2 FBO rendering and lock-free 48 kHz Web AudioWorklet DSP.</li>
+            <li>Plain JSON cassettes, SQLite snapshots, and 16-bit PCM WAV files stored on disk.</li>
+          </ul>
+          <div class="stack-icons" aria-label="Verified runtimes and toolchains">
+            <span class="stack-tile"><img src="assets/icons/typescript.svg" alt="" width="16" height="16" loading="lazy">Node 26</span>
+            <span class="stack-tile"><img src="assets/icons/c-plusplus.svg" alt="" width="16" height="16" loading="lazy">C++20</span>
+            <span class="stack-tile"><img src="assets/icons/sqlite.svg" alt="" width="16" height="16" loading="lazy">SQLite</span>
+            <span class="stack-tile"><img src="assets/icons/git.svg" alt="" width="16" height="16" loading="lazy">AST Git</span>
+            <span class="stack-tile"><img src="assets/icons/neovim.svg" alt="" width="16" height="16" loading="lazy">MCP</span>
+            <span class="stack-tile"><img src="assets/icons/github.svg" alt="" width="16" height="16" loading="lazy">JSON</span>
+            <span class="stack-tile"><img src="assets/icons/linux-tux.svg" alt="" width="16" height="16" loading="lazy">Linux</span>
+            <span class="stack-tile"><img src="assets/icons/apple.svg" alt="" width="16" height="16" loading="lazy">macOS</span>
+          </div>
+          <div><a class="link" href="#faq">Read the FAQ</a></div>
+        </div>
+        <div class="span-7 arch-col">
+          <div class="panel arch-panel">
+            <div class="dg" data-diagram data-diagram-opts='{"ground":"dots"}'>
+              <script type="application/json">
+              {
+                "layout": "bowtie",
+                "alt": "GLSL shaders, source trees, audio patches, and localhost HTTP route through Drawplate into WebGL2 canvas, stdio MCP, SQLite index, and JSON cassettes.",
+                "sources": [
+                  { "label": "GLSL Shaders", "icon": "neovim", "sub": "Subpass" },
+                  { "label": "Source Trees", "icon": "git", "sub": "Cleave" },
+                  { "label": "DSP Audio", "icon": "c-plusplus", "sub": "Slewbox" },
+                  { "label": "Local HTTP", "icon": "typescript", "sub": "Tapeline" }
+                ],
+                "core": { "label": "Drawplate", "icon": "text:D" },
+                "targets": [
+                  { "label": "WebGL2 App", "icon": "typescript", "sub": "workbench.html" },
+                  { "label": "Editor MCP", "icon": "neovim", "sub": "JSON-RPC stdio" },
+                  { "label": "SQLite Index", "icon": "sqlite", "sub": "808 KB DB" },
+                  { "label": "Git Fixtures", "icon": "github", "sub": "JSON / WAV" }
+                ]
+              }
+              </script>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. TECHNICAL FAQ (2-column split with Repo & Test Manifest UI card + 4 open Q&As, 1 screen desktop) -->
+  <section class="section" id="faq" aria-labelledby="faq-h">
+    <div class="wrap">
+      <div class="grid grid--top fill">
+        <div class="span-5 split-col">
+          <div class="section-head" style="margin-bottom: 0">
+            <h2 id="faq-h">Build and license questions</h2>
+          </div>
+          <div class="panel faq-manifest">
+            <div class="ui ui-panel manifest-card">
+              <div class="ui-head">
+                <span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <div class="ui-title">drawplate v1.0.0</div>
+                <span class="ui-spacer"></span>
+                <span class="ui-meta">Repo Manifest</span>
+              </div>
+              <div class="manifest-rows">
+                <div class="manifest-row"><span>packages/subpass</span><span>72 KB</span><span>0.61 ms check</span></div>
+                <div class="manifest-row"><span>packages/cleave</span><span>80 KB</span><span>0.11 ms AST</span></div>
+                <div class="manifest-row"><span>packages/cadastre</span><span>76 KB</span><span>0.23 ms query</span></div>
+                <div class="manifest-row"><span>slewbox-cli (C++20)</span><span>39.4 KB</span><span>1.21 ms WAV</span></div>
+                <div class="manifest-row"><span>packages/tapeline</span><span>40 KB</span><span>0.08 ms replay</span></div>
+                <div class="manifest-row manifest-extra"><span>data/cadastre-snapshot.json</span><span>886 KB</span><span>282 symbols</span></div>
+                <div class="manifest-row manifest-extra"><span>tests/*.test.mjs</span><span>6 suites</span><span>33 / 33 pass</span></div>
+                <div class="manifest-row manifest-extra"><span>LICENSE</span><span>1.1 KB</span><span>MIT</span></div>
+              </div>
+              <div class="manifest-foot">node --test tests/*.test.mjs · 33 of 33 passing</div>
+            </div>
+          </div>
+        </div>
+        <div class="span-7">
+          <div class="faq">
+            <div class="faq__item">
+              <h3>What license covers Drawplate tools?</h3>
+              <p>All Drawplate packages, the CLI, and the C++20 renderer ship under the MIT license.</p>
+            </div>
+            <div class="faq__item">
+              <h3>Which runtimes are supported?</h3>
+              <p>The workbench runs in browsers with WebGL2 and Web Audio. The CLI runs on Node.js 22.13 or newer.</p>
+            </div>
+            <div class="faq__item">
+              <h3>Do these tools run offline?</h3>
+              <p>Every tool runs strictly offline on localhost with all state kept on local disk.</p>
+            </div>
+            <div class="faq__item">
+              <h3>How do I build local Drawplate tools?</h3>
+              <p>There are no npm packages to install. Run npm run build:native before npm test and npm run bench.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 8. CLOSE + FOOTER (footer-dark, close-type, 1 screen desktop) -->
+<footer class="footer closing footer--dark ground-inverse" id="contact" aria-labelledby="close-h">
+  <div class="wrap">
+    <div class="closing__cta close--type">
+      <div class="section-head">
+        <h2 id="close-h">Try the Drawplate workbench</h2>
+        <p>MIT licensed. Zero npm dependencies. Runs in the browser or via Node 26 CLI.</p>
+      </div>
+      <a class="btn btn--primary btn--xl btn--wide" href="workbench.html">Try the workbench<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    </div>
+    <div class="closing__links">
+      <div class="grid">
+        <div class="span-4 stack-4">
+          <a class="nav__logo" href="#top" aria-label="Drawplate"><span class="mark mark--initial">D</span>Drawplate</a>
+          <p class="footer__lede">Local-first developer tools in isomorphic Node.js 26 ESM, WebGL2, Web AudioWorklet, and C++20.</p>
+        </div>
+        <div class="span-2 footer__col">
+          <h3>Projects</h3>
+          <ul>
+            <li><a href="workbench.html#subpass">Subpass</a></li>
+            <li><a href="workbench.html#cleave">Cleave</a></li>
+            <li><a href="workbench.html#cadastre">Cadastre</a></li>
+            <li><a href="workbench.html#slewbox">Slewbox</a></li>
+            <li><a href="workbench.html#tapeline">Tapeline</a></li>
+          </ul>
+        </div>
+        <div class="span-2 footer__col">
+          <h3>Workbench</h3>
+          <ul>
+            <li><a href="workbench.html">Try the workbench</a></li>
+            <li><a href="#workbench">Tool preview</a></li>
+            <li><a href="#tour">CLI workflows</a></li>
+          </ul>
+        </div>
+        <div class="span-2 footer__col">
+          <h3>Architecture</h3>
+          <ul>
+            <li><a href="#architecture">Shared runtime</a></li>
+            <li><a href="#statement">Live benchmarks</a></li>
+            <li><a href="#faq">Build and license</a></li>
+          </ul>
+        </div>
+        <div class="span-2 footer__col">
+          <h3>Source &amp; docs</h3>
+          <ul>
+            <li><a href="https://github.com/aarushvan/drawplate">Drawplate on GitHub</a></li>
+            <li><a href="README.md">README.md</a></li>
+            <li><a href="ARCHITECTURE.md">ARCHITECTURE.md</a></li>
+            <li><a href="https://github.com/aarushvan/cleave">Cleave on GitHub</a></li>
+            <li><a href="https://github.com/aarushvan/tapeline">Tapeline on GitHub</a></li>
+            <li><a href="LICENSE">MIT License</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__legal">
+        <span>&copy; 2026 Drawplate</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="assets/system.js"></script>
+<script type="module" src="assets/motion/motion.js"></script>
+<script type="module" src="assets/layout/layout.js"></script>
+<script type="module" src="assets/diagrams/mount.js"></script>
+<script>
+(() => {
+  // Interactive workbench preview controller
+  const root = document.getElementById('wb-root');
+  if (root) {
+    const modes = [...document.querySelectorAll('[data-wb-mode]')];
+    const rows = [...root.querySelectorAll('[data-wb-row]')];
+    const panes = [...root.querySelectorAll('[data-wb-pane]')];
+    const crumb = document.getElementById('wb-crumb');
+    const tools = document.getElementById('wb-tools');
+
+    const LABELS = {
+      subpass: ['Subpass', 'pbr_sphere.glsl', 'bloom'],
+      cleave: ['Cleave', 'cadastre/store.mjs', 'ast'],
+      cadastre: ['Cadastre', 'sym: diffAst', 'diffAst'],
+      slewbox: ['Slewbox', 'slewbox-worklet.js', 'granular'],
+      tapeline: ['Tapeline', 'tapeline-cassette-v2.json', 'v2'],
+    };
+
+    let bloomOn = true;
+    let tonemapOn = true;
+    let astMode = 'move';
+    let cadGraphOnly = false;
+    let dspPreset = 'granular';
+    let replayTick = 0;
+
+    const DSP = {
+      saw: {
+        name: 'Saw Lead', json: '"Saw Lead"', cut: '2,400 Hz', res: '0.38', grain: '60 ms',
+        dens: '20 Hz', rise: '12 ms', load: '1.21 ms',
+        wave: 'M0 44 L28 12 L28 44 L56 12 L56 44 L84 12 L84 44 L112 12 L112 44 L140 12 L140 44 L168 12 L168 44 L196 12 L196 44 L220 18'
+      },
+      granular: {
+        name: 'Granular Cloud', json: '"Granular Cloud"', cut: '3,600 Hz', res: '0.22', grain: '68 ms',
+        dens: '26 Hz', rise: '80 ms', load: '1.35 ms',
+        wave: 'M0 28 Q14 4 28 28 T56 28 T84 28 T112 28 T140 28 T168 28 T196 28 T220 28'
+      },
+      fm: {
+        name: 'FM Bell', json: '"FM Bell"', cut: '6,200 Hz', res: '0.15', grain: '55 ms',
+        dens: '18 Hz', rise: '4 ms', load: '1.72 ms',
+        wave: 'M0 28 C10 4, 16 52, 26 28 C36 8, 44 48, 54 28 C64 14, 72 42, 82 28 C94 18, 102 38, 114 28 C126 20, 138 36, 152 28 C168 23, 184 33, 220 28'
+      }
+    };
+
+    function renderTools(mode) {
+      const openLink = `<a class="ui-btn ui-btn--sm ui-btn--ghost app__open-full" href="workbench.html#${mode}">Open full tool</a>`;
+      if (mode === 'subpass') {
+        tools.innerHTML = `<button class="ui-btn ui-btn--sm ${bloomOn ? 'ui-btn--accent' : 'ui-btn--ghost'}" type="button" data-wb-action="bloom" aria-pressed="${bloomOn}">Toggle bloom</button><button class="ui-btn ui-btn--sm ${tonemapOn ? 'ui-btn--accent' : 'ui-btn--ghost'}" type="button" data-wb-action="tonemap" aria-pressed="${tonemapOn}">Toggle ACES</button>${openLink}`;
+      } else if (mode === 'cleave') {
+        tools.innerHTML = `<button class="ui-btn ui-btn--sm ${astMode === 'line' ? 'ui-btn--accent' : 'ui-btn--ghost'}" type="button" data-wb-action="ast" aria-pressed="${astMode === 'line'}">${astMode === 'move' ? 'Show line diff' : 'Show AST move'}</button>${openLink}`;
+      } else if (mode === 'cadastre') {
+        tools.innerHTML = `<button class="ui-btn ui-btn--sm ${cadGraphOnly ? 'ui-btn--accent' : 'ui-btn--ghost'}" type="button" data-wb-action="cad-mode" aria-pressed="${cadGraphOnly}">${cadGraphOnly ? 'Use hybrid int8' : 'Switch to graph'}</button>${openLink}`;
+      } else if (mode === 'slewbox') {
+        tools.innerHTML = `<button class="ui-btn ui-btn--sm ${dspPreset === 'saw' ? 'ui-btn--accent' : 'ui-btn--ghost'}" type="button" data-wb-action="dsp-saw" aria-pressed="${dspPreset === 'saw'}">Saw</button><button class="ui-btn ui-btn--sm ${dspPreset === 'granular' ? 'ui-btn--accent' : 'ui-btn--ghost'}" type="button" data-wb-action="dsp-granular" aria-pressed="${dspPreset === 'granular'}">Granular</button><button class="ui-btn ui-btn--sm ${dspPreset === 'fm' ? 'ui-btn--accent' : 'ui-btn--ghost'}" type="button" data-wb-action="dsp-fm" aria-pressed="${dspPreset === 'fm'}">FM Bell</button>${openLink}`;
+      } else {
+        tools.innerHTML = `<button class="ui-btn ui-btn--sm ui-btn--accent" type="button" data-wb-action="replay">Replay hit</button>${openLink}`;
+      }
+    }
+
+    function applyDetail(mode, detail, file) {
+      if (mode === 'subpass') {
+        const sig = document.getElementById('wb-wgsl-sig');
+        if (sig) sig.textContent = `${file} · live FBO pass`;
+        ['geometry', 'bloom', 'tonemap'].forEach(k => {
+          document.getElementById(`wb-pass-${k}`)?.classList.toggle('is-focus', detail === k);
+        });
+      } else if (mode === 'cleave') {
+        const sig = document.getElementById('wb-cleave-sig');
+        if (sig) sig.textContent = detail === 'merge' ? 'merge3(base, left, right) -> 0 conflicts (0.30 ms)' : 'CadastreStore.indexDirectory (similarity >= 0.65)';
+      } else if (mode === 'cadastre') {
+        const sig = document.getElementById('wb-cad-sig');
+        if (sig) sig.textContent = detail === 'trace' ? 'traceCallers(diffAst, depth=3) -> 0.007 ms' : 'diffAst --mode hybrid (282 symbols, 1,456 edges)';
+      }
+    }
+
+    let currentMode = 'subpass';
+    function setMode(mode, fileOverride, detailOverride) {
+      currentMode = mode;
+      modes.forEach(b => {
+        const on = b.dataset.wbMode === mode;
+        b.setAttribute('aria-selected', String(on));
+        b.tabIndex = on ? 0 : -1;
+      });
+      panes.forEach(p => { p.hidden = p.dataset.wbPane !== mode; });
+      const [tool, defFile, defDetail] = LABELS[mode] || LABELS.subpass;
+      const file = fileOverride || defFile;
+      const detail = detailOverride || defDetail;
+      crumb.innerHTML = `Drawplate <span>/ ${tool} /</span> ${file}`;
+      rows.forEach(r => {
+        const match = fileOverride ? (r.dataset.wbRow === mode && r.dataset.wbFile === fileOverride) : (r.dataset.wbRow === mode && r.dataset.wbFile === defFile);
+        r.classList.toggle('is-active', match);
+        r.setAttribute('aria-selected', String(match));
+      });
+      applyDetail(mode, detail, file);
+      renderTools(mode);
+    }
+
+    modes.forEach(b => b.addEventListener('click', () => setMode(b.dataset.wbMode)));
+    rows.forEach(r => {
+      const pick = () => setMode(r.dataset.wbRow, r.dataset.wbFile, r.dataset.wbDetail);
+      r.addEventListener('click', pick);
+      r.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+      });
+    });
+
+    tools.addEventListener('click', e => {
+      const btn = e.target.closest('[data-wb-action]');
+      if (!btn) return;
+      const act = btn.dataset.wbAction;
+      if (act === 'bloom' || act === 'tonemap') {
+        if (act === 'bloom') bloomOn = !bloomOn;
+        else tonemapOn = !tonemapOn;
+        document.getElementById('wb-pass-bloom')?.classList.toggle('is-off', !bloomOn);
+        document.getElementById('wb-pass-tonemap')?.classList.toggle('is-off', !tonemapOn);
+        const count = 1 + (bloomOn ? 1 : 0) + (tonemapOn ? 1 : 0);
+        document.getElementById('wb-gpu-total').textContent = `${count} passes active`;
+      } else if (act === 'ast') {
+        astMode = astMode === 'move' ? 'line' : 'move';
+        document.getElementById('wb-ast-badge').textContent = astMode === 'move' ? 'Moved 1 block · 70 lines saved (1.47 ms)' : 'Line diff: 0.067 ms raw Myers churn';
+        document.getElementById('wb-cleave-diff')?.classList.toggle('is-line-mode', astMode === 'line');
+      } else if (act === 'cad-mode') {
+        cadGraphOnly = !cadGraphOnly;
+        document.getElementById('wb-cad-latency').textContent = cadGraphOnly ? 'Call graph · 0.007 ms' : 'Hybrid int8 · 0.23 ms p50';
+        document.getElementById('wb-cad-sig').textContent = cadGraphOnly ? 'diffAst --mode graph (depth 3 trace)' : 'diffAst --mode hybrid (282 symbols, 1,456 edges)';
+      } else if (act.startsWith('dsp-')) {
+        dspPreset = act.slice(4);
+        const d = DSP[dspPreset];
+        if (d) {
+          document.getElementById('wb-dsp-preset').textContent = `Patch: ${d.name}`;
+          document.getElementById('wb-dsp-cut').textContent = d.cut;
+          document.getElementById('wb-dsp-res').textContent = d.res;
+          document.getElementById('wb-dsp-grain').textContent = d.grain;
+          document.getElementById('wb-dsp-dens').textContent = d.dens;
+          document.getElementById('wb-dsp-rise').textContent = d.rise;
+          document.getElementById('wb-dsp-load').textContent = d.load;
+          document.getElementById('wb-dsp-json-name').textContent = d.json;
+          document.getElementById('wb-dsp-wave').setAttribute('d', d.wave);
+        }
+      } else if (act === 'replay') {
+        replayTick += 1;
+        document.getElementById('wb-http-status').textContent = `10,552 req/s · 0.08 ms p50 (hit #${replayTick + 1})`;
+      }
+      renderTools(currentMode);
+    });
+
+    const wbSec = document.getElementById('workbench');
+    const KEYS = ['subpass', 'cleave', 'cadastre', 'slewbox', 'tapeline'];
+    wbSec?.addEventListener('keydown', e => {
+      const idx = Number(e.key) - 1;
+      if (idx >= 0 && idx < KEYS.length && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        setMode(KEYS[idx]);
+      }
+    });
+  }
+
+  // Scroll-spy for top-level nav links (clears underline on Hero)
+  const navLinks = [...document.querySelectorAll('.nav__links > .nav__item > .nav__link[href^="#"]')];
+  const targets = navLinks.map(a => [a, document.getElementById(a.getAttribute('href').slice(1))]).filter(([, el]) => el);
+  const heroEl = document.getElementById('hero');
+  if (targets.length && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        if (e.target === heroEl) {
+          targets.forEach(([a]) => a.removeAttribute('aria-current'));
+          continue;
+        }
+        targets.forEach(([a, el]) => {
+          if (el === e.target) a.setAttribute('aria-current', 'location');
+          else a.removeAttribute('aria-current');
+        });
+      }
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    if (heroEl) io.observe(heroEl);
+    targets.forEach(([, el]) => io.observe(el));
+  }
+})();
+</script>
+</body>
+</html>

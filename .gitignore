@@ -1,0 +1,26 @@
+# OS & editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Runtime & local databases
+.drawplate/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.wav
+!data/*.wav
+
+# Verification & temporary artifacts
+.taste-skill/
+shots/
+node_modules/
+coverage/
+*.log
+tmp/
+
+# Local native build
+packages/slewbox/native/slewbox-cli

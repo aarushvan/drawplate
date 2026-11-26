@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drawplate Workbench: Local Systems, Graphics, and Audio Tools</title>
+<meta name="description" content="Interactive local developer workbench for Subpass WebGL2 shader profiling, Cleave AST diff and 3-way merge, Cadastre hybrid symbol search, Slewbox Web AudioWorklet DSP synth, and Tapeline HTTP cassette replay.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f8f8f8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="workbench.css">
+</head>
+<body>
+<div class="wb-shell" id="wb-app">
+  <!-- Top Application Bar -->
+  <header class="wb-topbar">
+    <div class="wb-topbar__left">
+      <a class="wb-brand" href="index.html" aria-label="Drawplate home">
+        <span class="wb-mark" aria-hidden="true">D</span>
+        <span class="wb-brand__name">Drawplate</span>
+      </a>
+      <span class="wb-ver">v1.0</span>
+    </div>
+
+    <nav class="wb-tabs" role="tablist" aria-label="Drawplate tools">
+      <button class="wb-tab is-active" type="button" role="tab" id="tab-subpass" data-tool="subpass" aria-selected="true" aria-controls="view-subpass">
+        <span class="wb-tab__key">1</span><span>Subpass</span>
+      </button>
+      <button class="wb-tab" type="button" role="tab" id="tab-cleave" data-tool="cleave" aria-selected="false" aria-controls="view-cleave">
+        <span class="wb-tab__key">2</span><span>Cleave</span>
+      </button>
+      <button class="wb-tab" type="button" role="tab" id="tab-cadastre" data-tool="cadastre" aria-selected="false" aria-controls="view-cadastre">
+        <span class="wb-tab__key">3</span><span>Cadastre</span>
+      </button>
+      <button class="wb-tab" type="button" role="tab" id="tab-slewbox" data-tool="slewbox" aria-selected="false" aria-controls="view-slewbox">
+        <span class="wb-tab__key">4</span><span>Slewbox</span>
+      </button>
+      <button class="wb-tab" type="button" role="tab" id="tab-tapeline" data-tool="tapeline" aria-selected="false" aria-controls="view-tapeline">
+        <span class="wb-tab__key">5</span><span>Tapeline</span>
+      </button>
+    </nav>
+
+    <div class="wb-topbar__right">
+      <span class="wb-status" id="wb-runtime-status" title="Runtime connection mode">
+        <i class="wb-status__dot" aria-hidden="true"></i>
+        <span id="wb-runtime-label">Browser Mode</span>
+      </span>
+      <a class="wb-navlink" href="index.html">Overview</a>
+      <a class="wb-navlink" href="README.md" target="_blank" rel="noopener">Docs</a>
+      <a class="wb-navlink" href="https://github.com/aarushvan/drawplate">Source</a>
+    </div>
+  </header>
+
+  <!-- Main Workspace Stage -->
+  <main class="wb-stage">
+    <!-- ==================== TOOL 1: SUBPASS ==================== -->
+    <section class="wb-view is-active" id="view-subpass" role="tabpanel" aria-labelledby="tab-subpass" data-view="subpass">
+      <div class="wb-subbar">
+        <div class="wb-subbar__group">
+          <span class="wb-tool-tag">WebGL2 Multi-Pass</span>
+          <label class="wb-field-inline">
+            <span>Preset</span>
+            <select class="wb-select" id="sp-preset" aria-label="Shader preset">
+              <option value="pbr_sphere">pbr_sphere.glsl</option>
+              <option value="sdf_lattice">sdf_lattice.glsl</option>
+              <option value="flow_field">flow_field.glsl</option>
+            </select>
+          </label>
+          <button class="wb-btn wb-btn--primary" type="button" id="sp-toggle-play">Pause</button>
+          <button class="wb-btn" type="button" id="sp-recompile">Recompile</button>
+          <button class="wb-btn" type="button" id="sp-reset">Reset Shader</button>
+        </div>
+        <div class="wb-subbar__metrics">
+          <span class="wb-pill"><span class="wb-pill__k">FPS</span><b id="sp-fps">60.0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Frame</span><b id="sp-frame-ms">0.00 ms</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Reload</span><b id="sp-compile-ms">0.0 ms</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Backend</span><b id="sp-backend">WebGL2</b></span>
+        </div>
+      </div>
+
+      <div class="wb-grid wb-grid--subpass">
+        <!-- Left: GLSL Editor & Static Analyzer -->
+        <div class="wb-pane wb-pane--code">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title" id="sp-filename">shaders/pbr_sphere.glsl</span>
+            <span class="wb-pane__meta" id="sp-compile-status">Ready</span>
+          </div>
+          <div class="wb-editor-wrap">
+            <div class="wb-gutter" id="sp-gutter" aria-hidden="true">1</div>
+            <textarea class="wb-code-editor" id="sp-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-label="GLSL fragment shader source"></textarea>
+          </div>
+          <div class="wb-diag-bar" id="sp-diagnostics" role="status" aria-live="polite">
+            <span class="wb-diag-ok">0 compile errors</span>
+          </div>
+          <div class="wb-analyzer-strip" id="sp-analysis">
+            <div class="wb-stat-mini"><span>Uniforms</span><b id="sp-an-uniforms">0</b></div>
+            <div class="wb-stat-mini"><span>Functions</span><b id="sp-an-funcs">0</b></div>
+            <div class="wb-stat-mini"><span>Est. Ops</span><b id="sp-an-ops">0</b></div>
+            <div class="wb-stat-mini"><span>Branches</span><b id="sp-an-branches">0</b></div>
+          </div>
+        </div>
+
+        <!-- Right: Live WebGL2 Canvas + Profiler + Uniforms -->
+        <div class="wb-subpass-right">
+          <div class="wb-viewport-card">
+            <canvas id="sp-canvas" width="960" height="540" aria-label="Live WebGL2 shader output"></canvas>
+            <div class="wb-viewport-hud">
+              <span id="sp-hud-res">960x540</span>
+              <span id="sp-hud-passes">3/3 passes active</span>
+            </div>
+          </div>
+
+          <div class="wb-subpass-bottom">
+            <div class="wb-pane">
+              <div class="wb-pane__head">
+                <span class="wb-pane__title">Render Passes &amp; Frametime</span>
+                <span class="wb-pane__meta">16.6 ms budget</span>
+              </div>
+              <div class="wb-pass-list" id="sp-pass-list">
+                <div class="wb-pass-row" data-pass="geometry">
+                  <label class="wb-switch">
+                    <input type="checkbox" id="sp-pass-geometry" checked>
+                    <span class="wb-switch__track"></span>
+                    <span class="wb-pass-name">01 Geometry</span>
+                  </label>
+                  <div class="wb-bar-track"><div class="wb-bar-fill" id="sp-bar-geometry" style="width: 18%"></div></div>
+                  <span class="wb-pass-ms" id="sp-ms-geometry">0.00 ms</span>
+                </div>
+                <div class="wb-pass-row" data-pass="bloom">
+                  <label class="wb-switch">
+                    <input type="checkbox" id="sp-pass-bloom" checked>
+                    <span class="wb-switch__track"></span>
+                    <span class="wb-pass-name">02 Bloom</span>
+                  </label>
+                  <div class="wb-bar-track"><div class="wb-bar-fill wb-bar-fill--mid" id="sp-bar-bloom" style="width: 10%"></div></div>
+                  <span class="wb-pass-ms" id="sp-ms-bloom">0.00 ms</span>
+                </div>
+                <div class="wb-pass-row" data-pass="tonemap">
+                  <label class="wb-switch">
+                    <input type="checkbox" id="sp-pass-tonemap" checked>
+                    <span class="wb-switch__track"></span>
+                    <span class="wb-pass-name">03 ACES Tonemap</span>
+                  </label>
+                  <div class="wb-bar-track"><div class="wb-bar-fill wb-bar-fill--dim" id="sp-bar-tonemap" style="width: 6%"></div></div>
+                  <span class="wb-pass-ms" id="sp-ms-tonemap">0.00 ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="wb-pane">
+              <div class="wb-pane__head">
+                <span class="wb-pane__title">Live Uniforms</span>
+                <span class="wb-pane__meta">Real-time FBO</span>
+              </div>
+              <div class="wb-sliders">
+                <label class="wb-slider-row">
+                  <span>Bloom Threshold</span>
+                  <input type="range" id="sp-u-threshold" min="0.1" max="1.6" step="0.02" value="0.68">
+                  <output id="sp-v-threshold">0.68</output>
+                </label>
+                <label class="wb-slider-row">
+                  <span>Bloom Intensity</span>
+                  <input type="range" id="sp-u-intensity" min="0" max="2.0" step="0.05" value="0.65">
+                  <output id="sp-v-intensity">0.65</output>
+                </label>
+                <label class="wb-slider-row">
+                  <span>Exposure</span>
+                  <input type="range" id="sp-u-exposure" min="0.4" max="2.4" step="0.05" value="1.15">
+                  <output id="sp-v-exposure">1.15</output>
+                </label>
+                <label class="wb-slider-row">
+                  <span>Time Speed</span>
+                  <input type="range" id="sp-u-speed" min="0" max="3.0" step="0.05" value="1.00">
+                  <output id="sp-v-speed">1.00x</output>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TOOL 2: CLEAVE ==================== -->
+    <section class="wb-view" id="view-cleave" role="tabpanel" aria-labelledby="tab-cleave" data-view="cleave" hidden>
+      <div class="wb-subbar">
+        <div class="wb-subbar__group">
+          <div class="wb-segmented" role="group" aria-label="Cleave diff mode">
+            <button class="wb-seg is-active" type="button" data-cl-mode="ast">AST Move Diff</button>
+            <button class="wb-seg" type="button" data-cl-mode="line">Line Diff</button>
+            <button class="wb-seg" type="button" data-cl-mode="merge">3-Way Merge</button>
+          </div>
+          <label class="wb-field-inline">
+            <span>Language</span>
+            <select class="wb-select" id="cl-lang" aria-label="Source language">
+              <option value="js">JavaScript / TS</option>
+              <option value="rust">Rust</option>
+              <option value="python">Python</option>
+              <option value="go">Go</option>
+              <option value="cpp">C / C++</option>
+            </select>
+          </label>
+          <label class="wb-field-inline">
+            <span>Preset</span>
+            <select class="wb-select" id="cl-preset" aria-label="Code diff preset">
+              <option value="js_move">JS: Moved + Edited Function</option>
+              <option value="rust_move">Rust: Relocated GPU Pass</option>
+              <option value="py_move">Python: Reordered Pipeline</option>
+              <option value="merge_auto">3-Way: Move + Body Edit (Auto)</option>
+              <option value="merge_conflict">3-Way: Overlapping Edit (Conflict)</option>
+            </select>
+          </label>
+        </div>
+        <div class="wb-subbar__metrics">
+          <span class="wb-pill"><span class="wb-pill__k">Moves</span><b id="cl-stat-moves">0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Lines Saved</span><b id="cl-stat-saved">0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Conflicts</span><b id="cl-stat-conflicts">0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Time</span><b id="cl-stat-ms">0.0 ms</b></span>
+        </div>
+      </div>
+
+      <div class="wb-cleave-layout">
+        <div class="wb-cleave-inputs" id="cl-inputs-grid">
+          <div class="wb-pane" id="cl-pane-base" hidden>
+            <div class="wb-pane__head">
+              <span class="wb-pane__title">Base (Common Ancestor)</span>
+              <span class="wb-pane__meta" id="cl-base-lines">0 lines</span>
+            </div>
+            <textarea class="wb-code-area" id="cl-base" spellcheck="false" aria-label="Base source code"></textarea>
+          </div>
+          <div class="wb-pane">
+            <div class="wb-pane__head">
+              <span class="wb-pane__title" id="cl-left-label">Before (Source A)</span>
+              <span class="wb-pane__meta" id="cl-left-lines">0 lines</span>
+            </div>
+            <textarea class="wb-code-area" id="cl-left" spellcheck="false" aria-label="Before or left branch source code"></textarea>
+          </div>
+          <div class="wb-pane">
+            <div class="wb-pane__head">
+              <span class="wb-pane__title" id="cl-right-label">After (Source B)</span>
+              <span class="wb-pane__meta" id="cl-right-lines">0 lines</span>
+            </div>
+            <textarea class="wb-code-area" id="cl-right" spellcheck="false" aria-label="After or right branch source code"></textarea>
+          </div>
+        </div>
+
+        <div class="wb-pane wb-cleave-output">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title" id="cl-out-title">Structural AST Move Diff</span>
+            <div class="wb-pane__actions">
+              <span class="wb-badge wb-badge--ok" id="cl-out-badge">0 conflicts</span>
+              <button class="wb-btn wb-btn--sm" type="button" id="cl-copy-output">Copy Output</button>
+            </div>
+          </div>
+          <div class="wb-moves-strip" id="cl-moves-strip"></div>
+          <div class="wb-diff-view" id="cl-diff-output" role="region" aria-label="Diff or merge output"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TOOL 3: CADASTRE ==================== -->
+    <section class="wb-view" id="view-cadastre" role="tabpanel" aria-labelledby="tab-cadastre" data-view="cadastre" hidden>
+      <div class="wb-subbar">
+        <div class="wb-subbar__group wb-subbar__group--grow">
+          <div class="wb-search-box">
+            <input type="search" id="cd-query" class="wb-search-input" placeholder="Search symbols, functions, or concepts in Drawplate..." value="diffAst" aria-label="Search indexed codebase">
+            <button class="wb-btn wb-btn--primary" type="button" id="cd-search-btn">Search</button>
+          </div>
+          <div class="wb-segmented" role="group" aria-label="Cadastre search mode">
+            <button class="wb-seg is-active" type="button" data-cd-mode="hybrid">Hybrid int8+BM25</button>
+            <button class="wb-seg" type="button" data-cd-mode="graph">Call Graph</button>
+            <button class="wb-seg" type="button" data-cd-mode="lexical">Lexical</button>
+          </div>
+        </div>
+        <div class="wb-subbar__metrics">
+          <span class="wb-pill"><span class="wb-pill__k">Files</span><b id="cd-stat-files">0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Symbols</span><b id="cd-stat-syms">0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Edges</span><b id="cd-stat-edges">0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Query</span><b id="cd-stat-ms">0.0 ms</b></span>
+        </div>
+      </div>
+
+      <div class="wb-quick-bar" id="cd-quick-queries">
+        <span class="wb-quick-label">Try:</span>
+        <button class="wb-chip-btn" type="button" data-cd-q="diffAst">diffAst</button>
+        <button class="wb-chip-btn" type="button" data-cd-q="compileUserShader">compileUserShader</button>
+        <button class="wb-chip-btn" type="button" data-cd-q="diffCassettes">diffCassettes</button>
+        <button class="wb-chip-btn" type="button" data-cd-q="encodeWav">encodeWav</button>
+        <button class="wb-chip-btn" type="button" data-cd-q="traceCallers">traceCallers</button>
+        <button class="wb-chip-btn" type="button" data-cd-q="merge3">merge3</button>
+        <span class="wb-spacer"></span>
+        <span class="wb-source-note" id="cd-corpus-source">Loading index...</span>
+      </div>
+
+      <div class="wb-grid wb-grid--cadastre">
+        <!-- Left: Ranked Results -->
+        <div class="wb-pane">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title">Ranked Symbols</span>
+            <span class="wb-pane__meta" id="cd-hit-count">0 hits</span>
+          </div>
+          <div class="wb-results-list" id="cd-results" role="listbox" aria-label="Search results"></div>
+        </div>
+
+        <!-- Center: Symbol Source Preview -->
+        <div class="wb-pane">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title" id="cd-sym-path">Select a symbol</span>
+            <span class="wb-pane__meta" id="cd-sym-meta">int8 128d</span>
+          </div>
+          <div class="wb-sym-header" id="cd-sym-header"></div>
+          <pre class="wb-source-pre" id="cd-sym-code"><code>Select any search result to inspect its source and call graph.</code></pre>
+        </div>
+
+        <!-- Right: Interactive Call Graph + MCP Config -->
+        <div class="wb-cadastre-right">
+          <div class="wb-pane wb-pane--graph">
+            <div class="wb-pane__head">
+              <span class="wb-pane__title">Caller &amp; Callee Graph</span>
+              <span class="wb-pane__meta" id="cd-graph-counts">0 callers / 0 callees</span>
+            </div>
+            <div class="wb-graph-stage" id="cd-graph-svg-wrap"></div>
+            <div class="wb-graph-lists" id="cd-graph-lists"></div>
+          </div>
+
+          <div class="wb-pane wb-pane--mcp">
+            <div class="wb-pane__head">
+              <span class="wb-pane__title">MCP Stdio Config (JSON-RPC 2.0)</span>
+              <button class="wb-btn wb-btn--sm" type="button" id="cd-copy-mcp">Copy Config</button>
+            </div>
+            <pre class="wb-mcp-pre" id="cd-mcp-json"><code>{
+  "mcpServers": {
+    "drawplate-cadastre": {
+      "command": "node",
+      "args": ["bin/drawplate.mjs", "cadastre", "mcp", "--db", ".drawplate/cadastre.sqlite"]
+    }
+  }
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TOOL 4: SLEWBOX ==================== -->
+    <section class="wb-view" id="view-slewbox" role="tabpanel" aria-labelledby="tab-slewbox" data-view="slewbox" hidden>
+      <div class="wb-subbar">
+        <div class="wb-subbar__group">
+          <button class="wb-btn wb-btn--primary" type="button" id="sb-audio-power">Start Audio Engine</button>
+          <div class="wb-segmented" role="group" aria-label="DSP voice engine">
+            <button class="wb-seg is-active" type="button" data-sb-engine="saw">Poly-BLEP Saw</button>
+            <button class="wb-seg" type="button" data-sb-engine="granular">Granular Cloud</button>
+            <button class="wb-seg" type="button" data-sb-engine="fm">FM Bell</button>
+          </div>
+          <label class="wb-field-inline">
+            <span>Patch</span>
+            <select class="wb-select" id="sb-patch-preset" aria-label="Synth patch preset">
+              <option value="Saw Lead">Saw Lead</option>
+              <option value="Granular Cloud">Granular Cloud</option>
+              <option value="FM Bell">FM Bell</option>
+              <option value="Sub Pulse">Sub Pulse</option>
+            </select>
+          </label>
+        </div>
+        <div class="wb-subbar__metrics">
+          <button class="wb-btn" type="button" id="sb-export-wav">Export .wav</button>
+          <button class="wb-btn" type="button" id="sb-export-json">Export .json</button>
+          <label class="wb-btn wb-file-btn">
+            <span>Import .json</span>
+            <input type="file" id="sb-import-json" accept=".json,application/json" hidden>
+          </label>
+          <span class="wb-pill"><span class="wb-pill__k">MIDI</span><b id="sb-midi-status">Idle</b></span>
+        </div>
+      </div>
+
+      <div class="wb-slewbox-layout">
+        <!-- Live Scope & FFT Visualizer -->
+        <div class="wb-pane wb-scope-pane">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title">Real-Time Audio Analyzer (48 kHz / 128-frame AudioWorklet)</span>
+            <div class="wb-pane__actions">
+              <div class="wb-segmented wb-segmented--sm" role="group" aria-label="Analyzer view">
+                <button class="wb-seg is-active" type="button" data-sb-scope="wave">Oscilloscope</button>
+                <button class="wb-seg" type="button" data-sb-scope="fft">FFT Spectrum</button>
+                <button class="wb-seg" type="button" data-sb-scope="both">Split</button>
+              </div>
+              <span class="wb-pane__meta" id="sb-active-note">Click a key or press A-K to play</span>
+            </div>
+          </div>
+          <div class="wb-scope-wrap">
+            <canvas id="sb-scope-canvas" width="1200" height="220" aria-label="Live oscilloscope and FFT spectrum"></canvas>
+          </div>
+        </div>
+
+        <!-- Modular Rack Parameters -->
+        <div class="wb-rack-grid">
+          <div class="wb-pane">
+            <div class="wb-pane__head">
+              <span class="wb-pane__title">Voice &amp; Granular / FM</span>
+              <span class="wb-pane__meta" id="sb-voice-mode-label">saw</span>
+            </div>
+            <div class="wb-sliders">
+              <label class="wb-slider-row">
+                <span id="sb-lbl-detune">Detune</span>
+                <input type="range" id="sb-p-detune" min="0" max="50" step="0.5" value="12">
+                <output id="sb-v-detune">12.0 ct</output>
+              </label>
+              <label class="wb-slider-row">
+                <span id="sb-lbl-grainSize">Grain Size</span>
+                <input type="range" id="sb-p-grainSize" min="10" max="140" step="1" value="42">
+                <output id="sb-v-grainSize">42 ms</output>
+              </label>
+              <label class="wb-slider-row">
+                <span id="sb-lbl-grainDensity">Grain Density</span>
+                <input type="range" id="sb-p-grainDensity" min="4" max="60" step="1" value="22">
+                <output id="sb-v-grainDensity">22 Hz</output>
+              </label>
+              <label class="wb-slider-row">
+                <span id="sb-lbl-fmRatio">FM Ratio / Index</span>
+                <input type="range" id="sb-p-fmRatio" min="0.5" max="8.0" step="0.1" value="2.0">
+                <output id="sb-v-fmRatio">2.0</output>
+              </label>
+            </div>
+          </div>
+
+          <div class="wb-pane">
+            <div class="wb-pane__head">
+              <span class="wb-pane__title">Chamberlin SVF Filter</span>
+              <span class="wb-pane__meta">12 dB/oct + tanh</span>
+            </div>
+            <div class="wb-sliders">
+              <label class="wb-slider-row">
+                <span>Cutoff</span>
+                <input type="range" id="sb-p-cutoff" min="120" max="12000" step="10" value="2800">
+                <output id="sb-v-cutoff">2800 Hz</output>
+              </label>
+              <label class="wb-slider-row">
+                <span>Resonance</span>
+                <input type="range" id="sb-p-resonance" min="0.05" max="0.92" step="0.01" value="0.34">
+                <output id="sb-v-resonance">0.34</output>
+              </label>
+              <label class="wb-slider-row">
+                <span>FM Index</span>
+                <input type="range" id="sb-p-fmIndex" min="0" max="8" step="0.1" value="2.4">
+                <output id="sb-v-fmIndex">2.4</output>
+              </label>
+              <label class="wb-slider-row">
+                <span>Master Gain</span>
+                <input type="range" id="sb-p-gain" min="0.05" max="0.95" step="0.01" value="0.65">
+                <output id="sb-v-gain">0.65</output>
+              </label>
+            </div>
+          </div>
+
+          <div class="wb-pane">
+            <div class="wb-pane__head">
+              <span class="wb-pane__title">ADSR Envelope</span>
+              <span class="wb-pane__meta">Zero-alloc</span>
+            </div>
+            <div class="wb-sliders">
+              <label class="wb-slider-row">
+                <span>Attack</span>
+                <input type="range" id="sb-p-attack" min="0.002" max="1.2" step="0.002" value="0.015">
+                <output id="sb-v-attack">15 ms</output>
+              </label>
+              <label class="wb-slider-row">
+                <span>Decay</span>
+                <input type="range" id="sb-p-decay" min="0.01" max="1.5" step="0.01" value="0.24">
+                <output id="sb-v-decay">240 ms</output>
+              </label>
+              <label class="wb-slider-row">
+                <span>Sustain</span>
+                <input type="range" id="sb-p-sustain" min="0" max="1" step="0.01" value="0.68">
+                <output id="sb-v-sustain">0.68</output>
+              </label>
+              <label class="wb-slider-row">
+                <span>Release</span>
+                <input type="range" id="sb-p-release" min="0.02" max="2.5" step="0.01" value="0.35">
+                <output id="sb-v-release">350 ms</output>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-Octave Playable Keyboard -->
+        <div class="wb-pane wb-keyboard-pane">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title">2-Octave Keyboard (QWERTY: A W S E D F T G Y H U J K)</span>
+            <div class="wb-pane__actions">
+              <button class="wb-btn wb-btn--sm" type="button" id="sb-oct-down">Oct -</button>
+              <span class="wb-pane__meta" id="sb-octave-label">C3 - B4</span>
+              <button class="wb-btn wb-btn--sm" type="button" id="sb-oct-up">Oct +</button>
+              <button class="wb-btn wb-btn--sm" type="button" id="sb-test-chord">Play Chord</button>
+            </div>
+          </div>
+          <div class="wb-piano" id="sb-piano" role="group" aria-label="Two-octave synthesizer keyboard"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TOOL 5: TAPELINE ==================== -->
+    <section class="wb-view" id="view-tapeline" role="tabpanel" aria-labelledby="tab-tapeline" data-view="tapeline" hidden>
+      <div class="wb-subbar">
+        <div class="wb-subbar__group">
+          <div class="wb-segmented" role="group" aria-label="Tapeline view mode">
+            <button class="wb-seg is-active" type="button" data-tl-view="waterfall">Waterfall Inspector</button>
+            <button class="wb-seg" type="button" data-tl-view="diff">Compare v1 vs v2</button>
+          </div>
+          <label class="wb-field-inline" id="tl-cassette-wrap">
+            <span>Cassette</span>
+            <select class="wb-select" id="tl-cassette-select" aria-label="Select cassette">
+              <option value="v1">tapeline-cassette-v1.json</option>
+              <option value="v2">tapeline-cassette-v2.json</option>
+            </select>
+          </label>
+          <label class="wb-btn wb-file-btn">
+            <span>Load .json</span>
+            <input type="file" id="tl-file-input" accept=".json,application/json" hidden>
+          </label>
+        </div>
+        <div class="wb-subbar__metrics">
+          <span class="wb-pill"><span class="wb-pill__k">Requests</span><b id="tl-stat-count">0</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Avg TTFB</span><b id="tl-stat-ttfb">0.0 ms</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Total</span><b id="tl-stat-total">0.0 ms</b></span>
+          <span class="wb-pill"><span class="wb-pill__k">Drifts</span><b id="tl-stat-drifts">0</b></span>
+        </div>
+      </div>
+
+      <!-- Drop Zone Overlay Hint -->
+      <div class="wb-drop-banner" id="tl-drop-zone">
+        Drop any Tapeline cassette <code>.json</code> file here to inspect its waterfall or compare against baseline.
+      </div>
+
+      <!-- Tapeline Waterfall Mode -->
+      <div class="wb-grid wb-grid--tapeline" id="tl-waterfall-grid">
+        <div class="wb-pane">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title" id="tl-wf-title">HTTP Request Waterfall</span>
+            <span class="wb-pane__meta" id="tl-wf-target">localhost</span>
+          </div>
+          <div class="wb-wf-head">
+            <span>Method &amp; Route</span>
+            <span>Status</span>
+            <span>TTFB</span>
+            <span>Total</span>
+            <span>Timing Waterfall</span>
+          </div>
+          <div class="wb-wf-list" id="tl-wf-list" role="listbox" aria-label="Recorded HTTP exchanges"></div>
+        </div>
+
+        <div class="wb-pane">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title" id="tl-detail-route">Exchange Inspector</span>
+            <div class="wb-pane__actions">
+              <div class="wb-segmented wb-segmented--sm" role="group" aria-label="Exchange payload tab">
+                <button class="wb-seg is-active" type="button" data-tl-tab="resBody">Response Body</button>
+                <button class="wb-seg" type="button" data-tl-tab="headers">Headers</button>
+                <button class="wb-seg" type="button" data-tl-tab="reqBody">Request</button>
+              </div>
+              <button class="wb-btn wb-btn--sm" type="button" id="tl-copy-curl">Copy cURL</button>
+            </div>
+          </div>
+          <div class="wb-tl-detail-meta" id="tl-detail-meta"></div>
+          <pre class="wb-source-pre wb-source-pre--json" id="tl-detail-body"><code>Select any recorded request to inspect headers and JSON payload.</code></pre>
+        </div>
+      </div>
+
+      <!-- Tapeline Compare v1 vs v2 Mode -->
+      <div class="wb-tl-diff-stage" id="tl-diff-stage" hidden>
+        <div class="wb-diff-summary-row" id="tl-diff-summary"></div>
+        <div class="wb-pane wb-tl-diff-pane">
+          <div class="wb-pane__head">
+            <span class="wb-pane__title">Structural Schema &amp; Latency Regression Diff (v1 vs v2)</span>
+            <span class="wb-pane__meta" id="tl-diff-meta">Deterministic cassette diff</span>
+          </div>
+          <div class="wb-tl-diff-list" id="tl-diff-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script type="module" src="workbench.js"></script>
+</body>
+</html>

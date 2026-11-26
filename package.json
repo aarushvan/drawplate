@@ -1,0 +1,31 @@
+{
+  "name": "drawplate",
+  "version": "1.0.0",
+  "description": "Local-first zero-dependency developer suite: Subpass (WebGL2 shader profiler), Cleave (AST diff & 3-way merge), Cadastre (SQLite hybrid vector + call-graph indexer & MCP server), Slewbox (AudioWorklet & C++20 DSP synth), and Tapeline (HTTP record/replay proxy & schema diff).",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "drawplate": "./bin/drawplate.mjs"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "serve": "node bin/drawplate.mjs serve --port 8080",
+    "bench": "node bin/drawplate.mjs bench",
+    "index:self": "node bin/drawplate.mjs snapshot",
+    "build:native": "${CXX:-clang++} -std=c++20 -O2 packages/slewbox/native/slewbox_cli.cpp -o packages/slewbox/native/slewbox-cli"
+  },
+  "keywords": [
+    "developer-tools",
+    "local-first",
+    "webgl2",
+    "ast-diff",
+    "sqlite",
+    "mcp",
+    "dsp",
+    "http-proxy",
+    "zero-dependency"
+  ]
+}
