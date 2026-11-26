@@ -63,7 +63,7 @@ async function copyText(text, btnEl, doneLabel = 'Copied') {
 async function probeLocalServer() {
   const statusEl = document.getElementById('wb-runtime-status');
   const labelEl = document.getElementById('wb-runtime-label');
-  if (window.location.protocol === 'file:') {
+  if (window.location.protocol === 'file:' || window.location.hostname.endsWith('.github.io')) {
     if (labelEl) labelEl.textContent = 'Browser Mode (Offline)';
     return;
   }
